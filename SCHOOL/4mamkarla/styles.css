@@ -1,0 +1,156 @@
+body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    margin: 0;
+    padding: 20px;
+    box-sizing: border-box;
+    background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%); 
+}
+
+.calculator {
+    background: rgba(255, 255, 255, 0.2);
+    backdrop-filter: blur(15px);
+    -webkit-backdrop-filter: blur(15px);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    border-radius: 24px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+    padding: 24px;
+    width: min(92vw, 380px);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+#display {
+    width: 100%;
+    height: 70px;
+    background: rgba(255, 255, 255, 0.4);
+    border: none;
+    border-radius: 12px;
+    font-size: 32px;
+    font-weight: 300;
+    text-align: right;
+    margin-bottom: 20px;
+    padding: 10px 20px;
+    box-sizing: border-box;
+    color: #333;
+}
+
+.buttons {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    width: 100%;
+}
+
+button {
+    height: 60px;
+    font-size: 20px;
+    font-weight: 500;
+    border: none;
+    border-radius: 16px;
+    cursor: pointer;
+    background-color: rgba(255, 255, 255, 0.6);
+    transition: all 0.2s ease;
+    color: #444;
+}
+
+button:hover {
+    background-color: rgba(255, 255, 255, 0.9);
+    transform: translateY(-2px);
+}
+
+button:active {
+    transform: translateY(0);
+}
+
+.operator {
+    background-color: #ff9f0a;
+    color: white;
+}
+
+.equals {
+    background-color: #34c759; 
+    color: white;
+}
+
+.clear {
+    background-color: #ff3b30;
+    color: white;
+}
+
+/* Kermit Container */
+.kermit-container {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    margin-top: 15px;
+}
+
+.kermit {
+    height: 100px; 
+    width: auto;
+    border-radius: 10px;
+    mix-blend-mode: multiply; 
+}
+
+/* Bigger, slightly zoomed-in look for desktop */
+@media (min-width: 1024px) {
+    .calculator {
+        width: 400px;
+        padding: 30px;
+    }
+
+    #display {
+        height: 80px;
+        font-size: 38px;
+    }
+
+    button {
+        height: 68px;
+        font-size: 22px;
+    }
+
+    .kermit {
+        height: 115px;
+    }
+}
+
+/* Mobile-friendly fit */
+@media (max-width: 600px) {
+    body {
+        padding: 12px;
+        align-items: flex-start;
+    }
+
+    .calculator {
+        width: 100%;
+        max-width: 360px;
+        border-radius: 18px;
+        padding: 16px;
+    }
+
+    .buttons {
+        gap: 9px;
+    }
+
+    #display {
+        height: 62px;
+        font-size: 28px;
+        margin-bottom: 14px;
+        padding: 8px 14px;
+    }
+
+    button {
+        height: 54px;
+        font-size: 18px;
+        border-radius: 12px;
+    }
+
+    .kermit {
+        height: 88px;
+    }
+}
