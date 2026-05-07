@@ -188,15 +188,30 @@ function showMsg(el, text, ok = false) {
 // ─── Chat messages (Firestore real-time) ─────
 let chatUnsubscribe = null;
 
+function showChatError(msg) {
+  const container = document.getElementById('chat-messages');
+  if (!container) return;
+  container.innerHTML = `<p style="color:#f87171;font-size:13px;padding:12px;">⚠️ ${msg}</p>`;
+}
+
 function startChatListener() {
   if (chatUnsubscribe) return;
+
+  // Quick connectivity test
+  db.collection('chat').limit(1).get()
+    .then(() => {}) // Firestore reachable
+    .catch(e => showChatError('Firestore error: ' + e.message));
+
   chatUnsubscribe = db.collection('chat')
     .orderBy('time', 'asc')
     .limitToLast(100)
-    .onSnapshot(snapshot => {
-      const msgs = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
-      renderMessages(msgs);
-    });
+    .onSnapshot(
+      snapshot => {
+        const msgs = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+        renderMessages(msgs);
+      },
+      err => showChatError('Listener error: ' + err.message)
+    );
 }
 
 function sendMessage() {
