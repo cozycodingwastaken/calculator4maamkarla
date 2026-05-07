@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MKX Random Character Picker</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Rajdhani:wght@400;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <main class="app">
+    <div class="glow glow-left" aria-hidden="true"></div>
+    <div class="glow glow-right" aria-hidden="true"></div>
+
+    <section class="card" aria-live="polite">
+      <p class="eyebrow">Mortal Kombat X</p>
+      <h1>Random Character Picker</h1>
+      <p class="subtitle">One click to choose your fighter and variation.</p>
+
+      <div class="result" id="resultBox">
+        <p class="result-label">Character</p>
+        <h2 id="characterName">-</h2>
+
+        <p class="result-label">Variation</p>
+        <h3 id="variationName">-</h3>
+      </div>
+
+      <div class="actions">
+        <button id="pickBtn" class="btn btn-primary" type="button">Pick Random Fighter</button>
+        <button id="resetBtn" class="btn btn-secondary" type="button">Reset</button>
+      </div>
+    </section>
+  </main>
+
+  <script src="script.js"></script>
+</body>
+</html>

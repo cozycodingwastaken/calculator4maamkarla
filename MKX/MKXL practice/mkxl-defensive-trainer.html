@@ -1,0 +1,976 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MKXL Defensive Trainer - Smoke Mixups</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;700&family=Space+Grotesk:wght@400;600&display=swap');
+
+    :root {
+      --bg-0: #07090f;
+      --bg-1: #101521;
+      --bg-2: #171e2e;
+      --panel: rgba(18, 24, 38, 0.92);
+      --line: rgba(138, 156, 196, 0.26);
+      --text: #e8edff;
+      --muted: #9da9c9;
+      --accent: #00d6c3;
+      --danger: #ff5e7e;
+      --ok: #49d18a;
+      --blue: #4ca6ff;
+      --purple: #c776ff;
+      --grey: #9ca5b8;
+      --green: #57db82;
+      --shadow: 0 14px 38px rgba(0, 0, 0, 0.45);
+      --radius: 18px;
+    }
+
+    * {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    html,
+    body {
+      margin: 0;
+      min-height: 100%;
+      background:
+        radial-gradient(circle at 18% 14%, rgba(73, 209, 138, 0.15), transparent 30%),
+        radial-gradient(circle at 84% 20%, rgba(76, 166, 255, 0.2), transparent 34%),
+        radial-gradient(circle at 50% 100%, rgba(199, 118, 255, 0.16), transparent 40%),
+        linear-gradient(155deg, var(--bg-0), var(--bg-1) 45%, #0a0f1a 100%);
+      color: var(--text);
+      font-family: 'Space Grotesk', 'Segoe UI', Tahoma, sans-serif;
+    }
+
+    body {
+      padding: 16px;
+    }
+
+    .app {
+      max-width: 1100px;
+      margin: 0 auto;
+      display: grid;
+      gap: 14px;
+    }
+
+    .panel {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(5px);
+    }
+
+    .header {
+      padding: 14px 16px;
+      display: grid;
+      gap: 10px;
+      align-items: center;
+      grid-template-columns: 1fr;
+    }
+
+    .title-wrap {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: baseline;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(1.35rem, 3.6vw, 2rem);
+      letter-spacing: 0.04em;
+      font-family: 'Rajdhani', sans-serif;
+      text-transform: uppercase;
+    }
+
+    .phase {
+      color: var(--muted);
+      font-size: 0.95rem;
+    }
+
+    .status-row {
+      display: grid;
+      gap: 10px;
+      grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+    }
+
+    .stat-card {
+      padding: 10px 12px;
+      border-radius: 14px;
+      border: 1px solid var(--line);
+      background: linear-gradient(160deg, rgba(255, 255, 255, 0.02), rgba(255, 255, 255, 0.01));
+    }
+
+    .label {
+      color: var(--muted);
+      font-size: 0.82rem;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+
+    .value {
+      margin-top: 2px;
+      font-size: 1.2rem;
+      font-weight: 600;
+    }
+
+    .layout {
+      display: grid;
+      gap: 14px;
+      grid-template-columns: 1.5fr 1fr;
+    }
+
+    .arena-panel {
+      padding: 12px;
+      display: grid;
+      gap: 10px;
+    }
+
+    .arena {
+      position: relative;
+      min-height: 300px;
+      border-radius: 16px;
+      overflow: hidden;
+      border: 1px solid var(--line);
+      background:
+        linear-gradient(to top, rgba(27, 38, 61, 0.8), rgba(16, 22, 38, 0.7) 45%, rgba(8, 10, 17, 0.9)),
+        repeating-linear-gradient(
+          90deg,
+          rgba(255, 255, 255, 0.02) 0,
+          rgba(255, 255, 255, 0.02) 2px,
+          transparent 2px,
+          transparent 14px
+        );
+    }
+
+    .arena::after {
+      content: '';
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 22%;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.35), transparent);
+    }
+
+    .fighter {
+      position: absolute;
+      left: 18%;
+      bottom: 22%;
+      width: 42px;
+      height: 82px;
+      border-radius: 18px 18px 10px 10px;
+      background: linear-gradient(#d4ddf3, #96a2c0);
+      box-shadow: 0 0 18px rgba(212, 221, 243, 0.4);
+      transition: transform 90ms linear;
+    }
+
+    .fighter.crouch {
+      transform: scaleY(0.72) translateY(13px);
+    }
+
+    .fighter.block {
+      box-shadow: 0 0 0 3px rgba(0, 214, 195, 0.35), 0 0 22px rgba(0, 214, 195, 0.5);
+    }
+
+    .move-banner {
+      position: absolute;
+      top: 14px;
+      left: 14px;
+      right: 14px;
+      padding: 10px 12px;
+      border-radius: 12px;
+      border: 1px solid var(--line);
+      background: rgba(0, 0, 0, 0.36);
+      font-weight: 600;
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+      opacity: 0;
+      transform: translateY(-6px);
+      transition: opacity 120ms ease, transform 120ms ease;
+    }
+
+    .move-banner.show {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .cue {
+      position: absolute;
+      width: 88px;
+      height: 88px;
+      border-radius: 50%;
+      border: 4px solid transparent;
+      opacity: 0;
+      transform: scale(0.65);
+      transition: transform 120ms linear, opacity 120ms linear;
+      filter: drop-shadow(0 0 10px rgba(255, 255, 255, 0.3));
+    }
+
+    .cue.show {
+      opacity: 1;
+      transform: scale(1);
+    }
+
+    .cue.low {
+      right: 18%;
+      bottom: 20%;
+      border-color: var(--blue);
+      background: radial-gradient(circle, rgba(76, 166, 255, 0.4), transparent 65%);
+    }
+
+    .cue.overhead {
+      right: 24%;
+      top: 20%;
+      border-color: var(--purple);
+      background: radial-gradient(circle, rgba(199, 118, 255, 0.45), transparent 64%);
+    }
+
+    .cue.tell {
+      right: 20%;
+      bottom: 26%;
+      border-color: var(--grey);
+      background: radial-gradient(circle, rgba(156, 165, 184, 0.45), transparent 65%);
+    }
+
+    .cue.grab {
+      right: 24%;
+      bottom: 28%;
+      border-color: var(--green);
+      background: radial-gradient(circle, rgba(87, 219, 130, 0.45), transparent 65%);
+    }
+
+    .hint {
+      color: var(--muted);
+      font-size: 0.92rem;
+      padding: 4px 2px 0;
+    }
+
+    .sidebar {
+      padding: 12px;
+      display: grid;
+      gap: 12px;
+    }
+
+    .controls {
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 12px;
+      background: rgba(255, 255, 255, 0.01);
+      display: grid;
+      gap: 10px;
+    }
+
+    .slider-wrap {
+      display: grid;
+      gap: 6px;
+    }
+
+    .slider-line {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.9rem;
+      color: var(--muted);
+    }
+
+    input[type='range'] {
+      width: 100%;
+      accent-color: var(--accent);
+    }
+
+    .buttons {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    button {
+      border: 1px solid var(--line);
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.02));
+      color: var(--text);
+      border-radius: 10px;
+      padding: 8px 12px;
+      font-family: inherit;
+      font-weight: 600;
+      cursor: pointer;
+      transition: transform 100ms ease, background 100ms ease;
+    }
+
+    button:hover {
+      transform: translateY(-1px);
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.14), rgba(255, 255, 255, 0.03));
+    }
+
+    .keymap {
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 10px;
+      background: rgba(255, 255, 255, 0.01);
+      font-size: 0.9rem;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+
+    .log-panel {
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 10px;
+      background: rgba(255, 255, 255, 0.01);
+      display: grid;
+      gap: 8px;
+      min-height: 240px;
+    }
+
+    .log-list {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      display: grid;
+      gap: 6px;
+      max-height: 220px;
+      overflow-y: auto;
+      font-size: 0.9rem;
+    }
+
+    .log-list li {
+      border-left: 3px solid var(--line);
+      padding: 6px 8px;
+      background: rgba(0, 0, 0, 0.25);
+      border-radius: 8px;
+    }
+
+    .log-list li.fail {
+      border-left-color: var(--danger);
+    }
+
+    .log-list li.success {
+      border-left-color: var(--ok);
+    }
+
+    .mobile-controls {
+      display: none;
+      padding: 12px;
+      border-radius: 14px;
+      border: 1px solid var(--line);
+      background: rgba(255, 255, 255, 0.02);
+      gap: 10px;
+    }
+
+    .touch-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(56px, 1fr));
+      gap: 8px;
+    }
+
+    .touch-btn {
+      min-height: 54px;
+      border-radius: 12px;
+      border: 1px solid var(--line);
+      background: rgba(255, 255, 255, 0.06);
+      color: var(--text);
+      font-weight: 600;
+      font-family: 'Rajdhani', sans-serif;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      user-select: none;
+    }
+
+    .touch-btn.active {
+      background: rgba(0, 214, 195, 0.28);
+      border-color: rgba(0, 214, 195, 0.65);
+    }
+
+    .note {
+      color: var(--muted);
+      font-size: 0.83rem;
+    }
+
+    @media (max-width: 930px) {
+      .layout {
+        grid-template-columns: 1fr;
+      }
+
+      .mobile-controls {
+        display: grid;
+      }
+
+      .arena {
+        min-height: 260px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <section class="panel header">
+      <div class="title-wrap">
+        <h1>MKXL Defensive Trainer</h1>
+        <div class="phase">Phase 1: Smoke Defensive Reactions</div>
+      </div>
+      <div class="status-row">
+        <div class="stat-card">
+          <div class="label">Current Move</div>
+          <div class="value" id="currentMove">Idle</div>
+        </div>
+        <div class="stat-card">
+          <div class="label">Success</div>
+          <div class="value" id="successCount">0</div>
+        </div>
+        <div class="stat-card">
+          <div class="label">Fails</div>
+          <div class="value" id="failCount">0</div>
+        </div>
+        <div class="stat-card">
+          <div class="label">Streak</div>
+          <div class="value" id="streakCount">0</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="layout">
+      <section class="panel arena-panel">
+        <div class="arena" id="arena">
+          <div class="move-banner" id="moveBanner">
+            <span id="moveName">Incoming...</span>
+            <span id="moveTimer"></span>
+          </div>
+          <div class="fighter" id="fighter"></div>
+          <div class="cue" id="cue"></div>
+        </div>
+        <div class="hint" id="defenseHint">Default defense: hold TAB + S (crouch block).</div>
+      </section>
+
+      <aside class="panel sidebar">
+        <div class="controls">
+          <div class="slider-wrap">
+            <label for="reactionSlider">Reaction Window (Overhead): <strong id="reactionValue">300ms</strong></label>
+            <input id="reactionSlider" type="range" min="150" max="500" step="10" value="300" />
+            <div class="slider-line">
+              <span>150ms</span>
+              <span>500ms</span>
+            </div>
+          </div>
+          <div class="buttons">
+            <button id="startBtn">Start</button>
+            <button id="pauseBtn">Pause</button>
+            <button id="resetBtn">Reset</button>
+          </div>
+          <div class="note">Grab tech remains capped at 200ms by rule. Slider changes overhead reaction timing.</div>
+        </div>
+
+        <div class="keymap">
+          <strong>Input Map</strong><br />
+          Move: W / A / S / D<br />
+          Attacks: I (1), J (2), K (3), L (4)<br />
+          Block: Tab<br />
+          Grab/Tech: U
+        </div>
+
+        <div class="log-panel">
+          <strong>Log</strong>
+          <ul class="log-list" id="logList"></ul>
+        </div>
+      </aside>
+    </section>
+
+    <section class="mobile-controls" id="mobileControls">
+      <div><strong>Touch Controls</strong></div>
+      <div class="touch-grid">
+        <button class="touch-btn" data-action="up" data-mode="hold">W</button>
+        <button class="touch-btn" data-action="left" data-mode="hold">A</button>
+        <button class="touch-btn" data-action="down" data-mode="hold">S</button>
+        <button class="touch-btn" data-action="right" data-mode="hold">D</button>
+        <button class="touch-btn" data-action="block" data-mode="hold">Tab</button>
+        <button class="touch-btn" data-action="tech" data-mode="tap">U</button>
+        <button class="touch-btn" data-action="atk1" data-mode="tap">I</button>
+        <button class="touch-btn" data-action="atk2" data-mode="tap">J</button>
+        <button class="touch-btn" data-action="atk3" data-mode="tap">K</button>
+        <button class="touch-btn" data-action="atk4" data-mode="tap">L</button>
+      </div>
+      <div class="note">Hold buttons for movement and block. Tap for U / I / J / K / L.</div>
+    </section>
+  </main>
+
+  <script>
+    (() => {
+      const ACTIONS = {
+        KeyW: 'up',
+        KeyS: 'down',
+        KeyA: 'left',
+        KeyD: 'right',
+        KeyI: 'atk1',
+        KeyJ: 'atk2',
+        KeyK: 'atk3',
+        KeyL: 'atk4',
+        Tab: 'block',
+        KeyU: 'tech'
+      };
+
+      class InputManager {
+        constructor() {
+          this.held = new Set();
+          this.lastTap = new Map();
+          this.tapListeners = new Set();
+          this.preventDefaultKeys = new Set(Object.keys(ACTIONS));
+          this.setupKeyboard();
+          this.setupTouch();
+        }
+
+        setupKeyboard() {
+          window.addEventListener('keydown', (e) => {
+            const action = ACTIONS[e.code];
+            if (!action) return;
+            if (this.preventDefaultKeys.has(e.code)) e.preventDefault();
+            const alreadyHeld = this.held.has(action);
+            this.held.add(action);
+            if (!alreadyHeld) this.registerTap(action);
+          });
+
+          window.addEventListener('keyup', (e) => {
+            const action = ACTIONS[e.code];
+            if (!action) return;
+            if (this.preventDefaultKeys.has(e.code)) e.preventDefault();
+            this.held.delete(action);
+          });
+
+          window.addEventListener('blur', () => this.held.clear());
+        }
+
+        setupTouch() {
+          const buttons = document.querySelectorAll('.touch-btn');
+          for (const btn of buttons) {
+            const action = btn.dataset.action;
+            const mode = btn.dataset.mode;
+
+            const holdStart = (ev) => {
+              ev.preventDefault();
+              if (mode === 'hold') {
+                this.held.add(action);
+                btn.classList.add('active');
+                this.registerTap(action);
+              } else {
+                this.registerTap(action);
+                btn.classList.add('active');
+                setTimeout(() => btn.classList.remove('active'), 100);
+              }
+            };
+
+            const holdEnd = (ev) => {
+              ev.preventDefault();
+              if (mode === 'hold') {
+                this.held.delete(action);
+                btn.classList.remove('active');
+              }
+            };
+
+            btn.addEventListener('pointerdown', holdStart);
+            btn.addEventListener('pointerup', holdEnd);
+            btn.addEventListener('pointercancel', holdEnd);
+            btn.addEventListener('pointerleave', holdEnd);
+          }
+        }
+
+        registerTap(action) {
+          const now = performance.now();
+          this.lastTap.set(action, now);
+          this.tapListeners.forEach((fn) => fn(action, now));
+        }
+
+        onTap(fn) {
+          this.tapListeners.add(fn);
+          return () => this.tapListeners.delete(fn);
+        }
+
+        isHeld(action) {
+          return this.held.has(action);
+        }
+      }
+
+      class Logger {
+        constructor(listEl) {
+          this.listEl = listEl;
+        }
+
+        add(message, type = '') {
+          const li = document.createElement('li');
+          li.className = type;
+          const time = new Date().toLocaleTimeString([], { hour12: false });
+          li.textContent = `[${time}] ${message}`;
+          this.listEl.prepend(li);
+          while (this.listEl.children.length > 24) {
+            this.listEl.removeChild(this.listEl.lastChild);
+          }
+        }
+
+        clear() {
+          this.listEl.innerHTML = '';
+        }
+      }
+
+      class UI {
+        constructor() {
+          this.currentMove = document.getElementById('currentMove');
+          this.successCount = document.getElementById('successCount');
+          this.failCount = document.getElementById('failCount');
+          this.streakCount = document.getElementById('streakCount');
+          this.moveBanner = document.getElementById('moveBanner');
+          this.moveName = document.getElementById('moveName');
+          this.moveTimer = document.getElementById('moveTimer');
+          this.cue = document.getElementById('cue');
+          this.fighter = document.getElementById('fighter');
+          this.hint = document.getElementById('defenseHint');
+        }
+
+        setMove(name) {
+          this.currentMove.textContent = name;
+          this.moveName.textContent = name;
+          this.moveBanner.classList.add('show');
+        }
+
+        setTimer(text) {
+          this.moveTimer.textContent = text;
+        }
+
+        clearMove() {
+          this.currentMove.textContent = 'Idle';
+          this.moveBanner.classList.remove('show');
+          this.moveTimer.textContent = '';
+          this.clearCue();
+        }
+
+        setCue(type) {
+          this.cue.className = `cue show ${type}`;
+        }
+
+        clearCue() {
+          this.cue.className = 'cue';
+        }
+
+        updateFighter(input) {
+          this.fighter.classList.toggle('crouch', input.isHeld('down'));
+          this.fighter.classList.toggle('block', input.isHeld('block'));
+        }
+
+        setHint(text) {
+          this.hint.textContent = text;
+        }
+
+        updateStats(stats) {
+          this.successCount.textContent = String(stats.success);
+          this.failCount.textContent = String(stats.fail);
+          this.streakCount.textContent = String(stats.streak);
+        }
+      }
+
+      class StateMachine {
+        constructor() {
+          this.current = null;
+        }
+
+        set(state) {
+          if (this.current && this.current.exit) this.current.exit();
+          this.current = state;
+          if (this.current && this.current.enter) this.current.enter();
+        }
+
+        update(now, dt) {
+          if (this.current && this.current.update) {
+            this.current.update(now, dt);
+          }
+        }
+      }
+
+      class DefensivePhaseState {
+        constructor(engine) {
+          this.engine = engine;
+          this.nextMoveAt = 0;
+          this.active = null;
+          this.unsubscribeTap = null;
+          this.movePool = [
+            { id: 'lowSlide', w: 34 },
+            { id: 'overheadTeleport', w: 24 },
+            { id: 'smokeDashMix', w: 26 },
+            { id: 'grabTech', w: 16 }
+          ];
+        }
+
+        enter() {
+          this.scheduleNext(performance.now(), 800, 1400);
+          this.unsubscribeTap = this.engine.input.onTap((action, when) => {
+            if (this.active && this.active.onTap) this.active.onTap(action, when);
+          });
+        }
+
+        exit() {
+          if (this.unsubscribeTap) this.unsubscribeTap();
+          this.active = null;
+          this.engine.ui.clearMove();
+        }
+
+        scheduleNext(now, min = 900, max = 2000) {
+          this.nextMoveAt = now + min + Math.random() * (max - min);
+        }
+
+        pickMove() {
+          const total = this.movePool.reduce((sum, m) => sum + m.w, 0);
+          let r = Math.random() * total;
+          for (const move of this.movePool) {
+            r -= move.w;
+            if (r <= 0) return move.id;
+          }
+          return 'lowSlide';
+        }
+
+        isCrouchBlock() {
+          const i = this.engine.input;
+          return i.isHeld('block') && i.isHeld('down');
+        }
+
+        isStandBlock() {
+          const i = this.engine.input;
+          return i.isHeld('block') && i.isHeld('up');
+        }
+
+        startMove(now) {
+          const moveId = this.pickMove();
+          const moveStart = {
+            lowSlide: () => this.startLowSlide(now),
+            overheadTeleport: () => this.startOverheadTeleport(now),
+            smokeDashMix: () => this.startSmokeDashMix(now),
+            grabTech: () => this.startGrabTech(now)
+          };
+          this.active = moveStart[moveId]();
+        }
+
+        finishMove(success, reason) {
+          const move = this.active;
+          if (!move) return;
+          this.engine.resolveMove(move.name, success, reason);
+          this.active = null;
+          this.scheduleNext(performance.now());
+        }
+
+        startLowSlide(now) {
+          const duration = 260;
+          this.engine.ui.setMove('Low Slide');
+          this.engine.ui.setCue('low');
+          this.engine.ui.setHint('Defend low: keep TAB + S.');
+
+          return {
+            name: 'Low Slide',
+            endAt: now + duration,
+            update: (t) => {
+              this.engine.ui.setTimer(`${Math.max(0, Math.ceil((now + duration - t)))}ms`);
+              if (t >= now + duration) {
+                if (this.isCrouchBlock()) return this.finishMove(true, 'Correct crouch block.');
+                if (!this.engine.input.isHeld('block')) return this.finishMove(false, 'Dropped block.');
+                return this.finishMove(false, 'Failed to stay low.');
+              }
+            }
+          };
+        }
+
+        startOverheadTeleport(now) {
+          const reactionWindow = this.engine.getReactionWindow();
+          this.engine.ui.setMove('Overhead Teleport');
+          this.engine.ui.setCue('overhead');
+          this.engine.ui.setHint('React by switching to TAB + W.');
+
+          const event = {
+            name: 'Overhead Teleport',
+            deadline: now + reactionWindow,
+            reacted: false,
+            attemptedStand: false,
+            update: (t) => {
+              if (this.engine.input.isHeld('up')) event.attemptedStand = true;
+              if (!event.reacted && this.isStandBlock()) {
+                event.reacted = true;
+              }
+              this.engine.ui.setTimer(`${Math.max(0, Math.ceil(event.deadline - t))}ms`);
+              if (t >= event.deadline) {
+                if (event.reacted) return this.finishMove(true, `Stood block in ${reactionWindow}ms window.`);
+                if (event.attemptedStand) return this.finishMove(false, 'Too slow to complete stand block.');
+                return this.finishMove(false, 'Failed to stand block.');
+              }
+            }
+          };
+
+          return event;
+        }
+
+        startSmokeDashMix(now) {
+          const tellDuration = 300;
+          const impactAt = now + 620;
+          this.engine.ui.setMove('Smoke Dash Mixup');
+          this.engine.ui.setCue('tell');
+          this.engine.ui.setHint('Grey tell into low: do not stand. Keep TAB + S.');
+
+          const event = {
+            name: 'Smoke Dash Mixup',
+            stoodUp: false,
+            update: (t) => {
+              if (this.engine.input.isHeld('up')) event.stoodUp = true;
+              if (t > now + tellDuration) this.engine.ui.setCue('low');
+              this.engine.ui.setTimer(`${Math.max(0, Math.ceil(impactAt - t))}ms`);
+
+              if (t >= impactAt) {
+                if (event.stoodUp) return this.finishMove(false, 'Stood up on smoke tell.');
+                if (!this.engine.input.isHeld('block')) return this.finishMove(false, 'Dropped block.');
+                if (!this.engine.input.isHeld('down')) return this.finishMove(false, 'Did not stay crouched.');
+                return this.finishMove(true, 'Ignored tell and held crouch block.');
+              }
+            }
+          };
+
+          return event;
+        }
+
+        startGrabTech(now) {
+          const hardCap = 200;
+          const grabWindow = Math.min(this.engine.getReactionWindow(), hardCap);
+          this.engine.ui.setMove('Grab Tech');
+          this.engine.ui.setCue('grab');
+          this.engine.ui.setHint('Release TAB then tap U quickly (max 200ms).');
+
+          const event = {
+            name: 'Grab Tech',
+            deadline: now + grabWindow,
+            releasedBlockAt: null,
+            techTapAt: null,
+            onTap: (action, when) => {
+              if (action === 'tech') event.techTapAt = when;
+            },
+            update: (t) => {
+              if (!event.releasedBlockAt && !this.engine.input.isHeld('block')) {
+                event.releasedBlockAt = t;
+              }
+
+              this.engine.ui.setTimer(`${Math.max(0, Math.ceil(event.deadline - t))}ms`);
+
+              if (
+                event.techTapAt !== null &&
+                event.releasedBlockAt !== null &&
+                event.releasedBlockAt <= event.techTapAt &&
+                event.techTapAt <= event.deadline
+              ) {
+                return this.finishMove(true, 'Successful throw tech.');
+              }
+
+              if (t >= event.deadline) {
+                if (event.techTapAt === null) return this.finishMove(false, 'No tech input.');
+                if (event.releasedBlockAt === null) return this.finishMove(false, 'Did not release block.');
+                if (event.releasedBlockAt > event.techTapAt) return this.finishMove(false, 'Tech pressed before block release.');
+                return this.finishMove(false, 'Tech timing too slow.');
+              }
+            }
+          };
+
+          return event;
+        }
+
+        update(now) {
+          if (!this.active && now >= this.nextMoveAt) this.startMove(now);
+          if (this.active) this.active.update(now);
+          this.engine.ui.updateFighter(this.engine.input);
+        }
+      }
+
+      class TrainerEngine {
+        constructor() {
+          this.input = new InputManager();
+          this.ui = new UI();
+          this.logger = new Logger(document.getElementById('logList'));
+          this.stateMachine = new StateMachine();
+          this.stats = { success: 0, fail: 0, streak: 0 };
+          this.running = false;
+          this.lastTick = performance.now();
+          this.reactionSlider = document.getElementById('reactionSlider');
+          this.reactionValue = document.getElementById('reactionValue');
+
+          this.bindUI();
+          this.setReactionLabel();
+
+          // Phase 2 extension point:
+          // Register additional states for Liu Kang punish/combo drills here.
+          this.defensiveState = new DefensivePhaseState(this);
+          this.stateMachine.set(this.defensiveState);
+        }
+
+        bindUI() {
+          document.getElementById('startBtn').addEventListener('click', () => this.start());
+          document.getElementById('pauseBtn').addEventListener('click', () => this.pause());
+          document.getElementById('resetBtn').addEventListener('click', () => this.reset());
+          this.reactionSlider.addEventListener('input', () => this.setReactionLabel());
+        }
+
+        setReactionLabel() {
+          this.reactionValue.textContent = `${this.getReactionWindow()}ms`;
+        }
+
+        getReactionWindow() {
+          return Number(this.reactionSlider.value);
+        }
+
+        start() {
+          if (this.running) return;
+          this.running = true;
+          this.logger.add('Session started. Hold TAB + S as default defense.');
+        }
+
+        pause() {
+          if (!this.running) return;
+          this.running = false;
+          this.ui.setHint('Paused. Press Start to continue drills.');
+          this.logger.add('Session paused.');
+        }
+
+        reset() {
+          this.stats = { success: 0, fail: 0, streak: 0 };
+          this.ui.updateStats(this.stats);
+          this.ui.clearMove();
+          this.ui.setHint('Default defense: hold TAB + S (crouch block).');
+          this.logger.clear();
+          this.logger.add('Session reset.');
+          this.stateMachine.set(new DefensivePhaseState(this));
+          this.running = false;
+        }
+
+        resolveMove(moveName, success, reason) {
+          if (success) {
+            this.stats.success += 1;
+            this.stats.streak += 1;
+            this.logger.add(`${moveName}: defended. ${reason}`, 'success');
+          } else {
+            this.stats.fail += 1;
+            this.stats.streak = 0;
+            this.logger.add(`${moveName}: hit. ${reason}`, 'fail');
+          }
+          this.ui.updateStats(this.stats);
+          this.ui.clearMove();
+          this.ui.setHint('Default defense: hold TAB + S (crouch block).');
+        }
+
+        tick = (now) => {
+          const dt = now - this.lastTick;
+          this.lastTick = now;
+          if (this.running) {
+            this.stateMachine.update(now, dt);
+          } else {
+            this.ui.updateFighter(this.input);
+          }
+          requestAnimationFrame(this.tick);
+        };
+      }
+
+      const trainer = new TrainerEngine();
+      trainer.ui.updateStats(trainer.stats);
+      requestAnimationFrame(trainer.tick);
+    })();
+  </script>
+</body>
+</html>

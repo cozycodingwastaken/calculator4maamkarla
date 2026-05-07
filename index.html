@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>cozyapps.me</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+
+<!-- ========== SIDEBAR ========== -->
+<nav id="sidebar">
+  <div class="sidebar-logo">cozyapps</div>
+  <ul class="sidebar-nav">
+    <li><button class="nav-btn active" data-section="home">🏠 Home</button></li>
+    <li>
+      <button class="nav-btn nav-group-toggle" data-section="apps">📦 Apps</button>
+    </li>
+    <li>
+      <button class="nav-btn nav-group-toggle" data-section="personal">🎮 Personal</button>
+      <ul class="nav-sub" id="sub-personal">
+        <li><button class="nav-sub-btn" data-section="mkxl">MKXL Trainer</button></li>
+        <li><button class="nav-sub-btn" data-section="randomizer">MKX Randomizer</button></li>
+      </ul>
+    </li>
+    <li>
+      <button class="nav-btn nav-group-toggle" data-section="school">🎓 School</button>
+      <ul class="nav-sub" id="sub-school">
+        <li><button class="nav-sub-btn" data-section="calculator">Calculator</button></li>
+      </ul>
+    </li>
+    <li><button class="nav-btn" data-section="picreax">📸 PicReax</button></li>
+    <li><button class="nav-btn" data-section="about">👤 About Me</button></li>
+  </ul>
+</nav>
+
+<!-- ========== TOPBAR (mobile) ========== -->
+<div id="topbar">
+  <button id="hamburger" aria-label="Open menu">☰</button>
+  <span class="topbar-title">cozyapps</span>
+</div>
+<div id="sidebar-overlay"></div>
+
+<!-- ========== MAIN CONTENT ========== -->
+<main id="main">
+
+  <!-- HOME -->
+  <section id="section-home" class="page-section active">
+    <div class="hero">
+      <div class="hero-text">
+        <h1>hey, welcome to <span class="accent">cozyapps</span> 👋</h1>
+        <p>this is my little corner of the internet — apps i built, stuff i study, and things i'm into. feel free to hang out.</p>
+      </div>
+    </div>
+
+    <!-- LIVE CHAT -->
+    <div class="chat-wrapper">
+      <div class="chat-header">
+        <span>💬 live chat</span>
+        <span id="online-count" class="online-badge">0 online</span>
+      </div>
+
+      <!-- Auth gate -->
+      <div id="chat-auth" class="chat-auth">
+        <h3>join the chat</h3>
+        <p>pick a username and set a password — we'll remember you next time.</p>
+        <div class="auth-tabs">
+          <button class="auth-tab active" id="tab-login" onclick="switchAuthTab('login')">log in</button>
+          <button class="auth-tab" id="tab-register" onclick="switchAuthTab('register')">register</button>
+        </div>
+        <div id="auth-login-form" class="auth-form">
+          <input type="text" id="login-username" placeholder="username" autocomplete="username" />
+          <input type="password" id="login-password" placeholder="password" autocomplete="current-password" />
+          <button class="btn-primary" onclick="loginUser()">log in</button>
+          <p class="auth-msg" id="login-msg"></p>
+        </div>
+        <div id="auth-register-form" class="auth-form" style="display:none">
+          <input type="text" id="reg-username" placeholder="choose a username" autocomplete="username" />
+          <input type="password" id="reg-password" placeholder="choose a password" autocomplete="new-password" />
+          <input type="password" id="reg-password2" placeholder="confirm password" autocomplete="new-password" />
+          <button class="btn-primary" onclick="registerUser()">register</button>
+          <p class="auth-msg" id="reg-msg"></p>
+        </div>
+      </div>
+
+      <!-- Chat UI (shown when logged in) -->
+      <div id="chat-ui" class="chat-ui" style="display:none">
+        <div class="chat-user-bar">
+          <span>chatting as <strong id="chat-username-display"></strong></span>
+          <button class="btn-ghost" onclick="logoutUser()">log out</button>
+        </div>
+        <div id="chat-messages" class="chat-messages"></div>
+        <div class="chat-input-row">
+          <input type="text" id="chat-input" placeholder="say something..." maxlength="300" />
+          <button class="btn-send" onclick="sendMessage()">send</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- APPS overview -->
+  <section id="section-apps" class="page-section">
+    <h2>📦 Apps</h2>
+    <p class="section-sub">everything i've built — browse by category from the sidebar.</p>
+    <div class="app-cards">
+      <div class="app-card" onclick="navigateTo('personal')">
+        <div class="app-card-icon">🎮</div>
+        <div>
+          <strong>Personal</strong>
+          <p>MKX tools and fun stuff</p>
+        </div>
+      </div>
+      <div class="app-card" onclick="navigateTo('school')">
+        <div class="app-card-icon">🎓</div>
+        <div>
+          <strong>School</strong>
+          <p>Calculator and school projects</p>
+        </div>
+      </div>
+      <div class="app-card" onclick="navigateTo('picreax')">
+        <div class="app-card-icon">📸</div>
+        <div>
+          <strong>PicReax</strong>
+          <p>Share photos, react, comment</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- PERSONAL overview -->
+  <section id="section-personal" class="page-section">
+    <h2>🎮 Personal</h2>
+    <p class="section-sub">my MKX tools — pick one from the sidebar or tap below.</p>
+    <div class="app-cards">
+      <div class="app-card" onclick="navigateTo('mkxl')">
+        <div class="app-card-icon">🥷</div>
+        <div><strong>MKXL Defensive Trainer</strong><p>Smoke mixup training tool</p></div>
+      </div>
+      <div class="app-card" onclick="navigateTo('randomizer')">
+        <div class="app-card-icon">🎲</div>
+        <div><strong>MKX Randomizer</strong><p>Random character picker</p></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- MKXL -->
+  <section id="section-mkxl" class="page-section">
+    <div class="iframe-header">
+      <h2>🥷 MKXL Defensive Trainer</h2>
+      <a class="btn-ghost" href="MKX/MKXL practice/mkxl-defensive-trainer.html" target="_blank">open in new tab ↗</a>
+    </div>
+    <iframe src="MKX/MKXL practice/mkxl-defensive-trainer.html" class="app-frame" title="MKXL Defensive Trainer"></iframe>
+  </section>
+
+  <!-- RANDOMIZER -->
+  <section id="section-randomizer" class="page-section">
+    <div class="iframe-header">
+      <h2>🎲 MKX Randomizer</h2>
+      <a class="btn-ghost" href="MKX/Randomizer/index.html" target="_blank">open in new tab ↗</a>
+    </div>
+    <iframe src="MKX/Randomizer/index.html" class="app-frame" title="MKX Randomizer"></iframe>
+  </section>
+
+  <!-- SCHOOL overview -->
+  <section id="section-school" class="page-section">
+    <h2>🎓 School</h2>
+    <p class="section-sub">school projects live here.</p>
+    <div class="app-cards">
+      <div class="app-card" onclick="navigateTo('calculator')">
+        <div class="app-card-icon">🧮</div>
+        <div><strong>Calculator</strong><p>Built for Ma'am Karla</p></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CALCULATOR -->
+  <section id="section-calculator" class="page-section">
+    <div class="iframe-header">
+      <h2>🧮 Calculator</h2>
+      <a class="btn-ghost" href="SCHOOL/4mamkarla/index.html" target="_blank">open in new tab ↗</a>
+    </div>
+    <iframe src="SCHOOL/4mamkarla/index.html" class="app-frame app-frame-sm" title="Calculator"></iframe>
+  </section>
+
+  <!-- PICREAX -->
+  <section id="section-picreax" class="page-section">
+    <h2>📸 PicReax</h2>
+    <p class="section-sub">share a pic, react, comment. log in first to post.</p>
+
+    <div id="picreax-upload-area" class="picreax-upload-area" style="display:none">
+      <label class="upload-label" for="picreax-file-input">
+        <span>+ share a photo</span>
+        <input type="file" id="picreax-file-input" accept="image/*" onchange="handlePicUpload(event)" />
+      </label>
+    </div>
+    <p id="picreax-login-note" class="auth-note">log in to share a photo.</p>
+
+    <div id="picreax-feed" class="picreax-feed"></div>
+  </section>
+
+  <!-- ABOUT -->
+  <section id="section-about" class="page-section">
+    <h2>👤 About Me</h2>
+    <div class="about-card">
+      <div class="about-avatar">🧑‍💻</div>
+      <div class="about-text">
+        <h3>cozy coder</h3>
+        <p>i build small apps for fun, play mortal kombat, and occasionally do school stuff. this site is basically my dev playground — everything here i made from scratch.</p>
+        <p>reach me anywhere that's linked. thanks for visiting 🙏</p>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<script src="app.js"></script>
+<script src="picreax.js"></script>
+</body>
+</html>
