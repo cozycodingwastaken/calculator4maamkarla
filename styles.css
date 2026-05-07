@@ -573,10 +573,12 @@ html, body {
 .post-time { font-size: 12px; color: var(--text-muted); }
 
 .post-img {
-  width: 100%;
-  max-height: 500px;
-  object-fit: cover;
   display: block;
+  max-width: 288px;   /* ~3 inches at 96dpi */
+  max-height: 288px;  /* caps portrait at ~3 inches tall */
+  width: auto;
+  height: auto;
+  object-fit: contain;
 }
 
 .post-actions {
