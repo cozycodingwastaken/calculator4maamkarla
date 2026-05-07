@@ -51,17 +51,15 @@ function navigateTo(id) {
 // Wire up all nav buttons
 navBtns.forEach(btn => {
   btn.addEventListener('click', () => {
-    const id = btn.dataset.section;
-    // If it has a submenu, toggle it
-    const subId = 'sub-' + id;
-    const sub = document.getElementById(subId);
-    if (sub) {
-      sub.classList.toggle('open');
-      // Navigate to the overview section too
-      navigateTo(id);
-    } else {
-      navigateTo(id);
+    const group = btn.dataset.group;
+    if (group) {
+      const sub = document.getElementById('sub-' + group);
+      if (sub) sub.classList.toggle('open');
+      return;
     }
+
+    const id = btn.dataset.section;
+    if (id) navigateTo(id);
   });
 });
 
@@ -160,7 +158,7 @@ async function registerUser() {
   saveUsers(users);
   saveSession(username);
   showMsg(msg, 'registered! welcome 🎉', true);
-  setTimeout(showChatUI, 600);
+  setTimeout(updateAuthUI, 250);
 }
 
 async function loginUser() {
@@ -179,27 +177,14 @@ async function loginUser() {
 
   saveSession(record.display);
   showMsg(msg, 'welcome back!', true);
-  setTimeout(showChatUI, 400);
+  setTimeout(updateAuthUI, 250);
 }
 
 function logoutUser() {
   clearSession();
-  document.getElementById('chat-ui').style.display = 'none';
-  document.getElementById('chat-auth').style.display = 'block';
   document.getElementById('login-username').value = '';
   document.getElementById('login-password').value = '';
-  // picreax upload toggle
-  updatePicreaxUploadVisibility();
-}
-
-function showChatUI() {
-  const user = currentUser();
-  if (!user) return;
-  document.getElementById('chat-auth').style.display = 'none';
-  document.getElementById('chat-ui').style.display = 'flex';
-  document.getElementById('chat-username-display').textContent = user;
-  loadMessages();
-  updatePicreaxUploadVisibility();
+  updateAuthUI();
 }
 
 function showMsg(el, text, ok = false) {
@@ -241,6 +226,47 @@ function loadMessages() {
   renderMessages(getMessages());
 }
 
+function updateChatAccessState() {
+  const user = currentUser();
+  const input = document.getElementById('chat-input');
+  const sendBtn = document.getElementById('chat-send-btn');
+  const note = document.getElementById('chat-access-note');
+
+  if (user) {
+    input.disabled = false;
+    sendBtn.disabled = false;
+    input.placeholder = 'say something...';
+    note.style.display = 'none';
+  } else {
+    input.disabled = true;
+    sendBtn.disabled = true;
+    input.placeholder = 'log in to send a message';
+    note.style.display = 'block';
+  }
+}
+
+function updateAuthUI() {
+  const user = currentUser();
+  const guest = document.getElementById('auth-guest');
+  const authUser = document.getElementById('auth-user');
+  const userLabel = document.getElementById('chat-username-display');
+
+  if (user) {
+    guest.style.display = 'none';
+    authUser.style.display = 'flex';
+    userLabel.textContent = user;
+  } else {
+    guest.style.display = 'block';
+    authUser.style.display = 'none';
+    userLabel.textContent = '';
+  }
+
+  loadMessages();
+  updateChatAccessState();
+  updatePicreaxUploadVisibility();
+  updateOnlineCount();
+}
+
 function renderMessages(msgs) {
   const container = document.getElementById('chat-messages');
   const user = currentUser();
@@ -262,10 +288,10 @@ function renderMessages(msgs) {
 
 // Detect new messages from other tabs
 window.addEventListener('storage', (e) => {
-  if (e.key === 'cozy_chat_ping' && currentUser()) {
+  if (e.key === 'cozy_chat_ping') {
     renderMessages(getMessages());
   }
-  if (e.key === MSGS_KEY && currentUser()) {
+  if (e.key === MSGS_KEY) {
     renderMessages(getMessages());
   }
 });
@@ -313,8 +339,5 @@ function timeAgo(ts) {
 
 // ─── Init ─────────────────────────────────────
 (function init() {
-  const user = currentUser();
-  if (user) {
-    showChatUI();
-  }
+  updateAuthUI();
 })();

@@ -14,19 +14,19 @@
 <nav id="sidebar">
   <div class="sidebar-logo">cozyapps</div>
   <ul class="sidebar-nav">
-    <li><button class="nav-btn active" data-section="home">🏠 Home</button></li>
+    <li><button class="nav-btn active" data-section="home">💬 Live Chat</button></li>
     <li>
-      <button class="nav-btn nav-group-toggle" data-section="apps">📦 Apps</button>
+      <button class="nav-btn" data-section="apps">📦 Apps</button>
     </li>
     <li>
-      <button class="nav-btn nav-group-toggle" data-section="personal">🎮 Personal</button>
+      <button class="nav-btn nav-group-toggle" data-group="personal">🎮 Personal</button>
       <ul class="nav-sub" id="sub-personal">
         <li><button class="nav-sub-btn" data-section="mkxl">MKXL Trainer</button></li>
         <li><button class="nav-sub-btn" data-section="randomizer">MKX Randomizer</button></li>
       </ul>
     </li>
     <li>
-      <button class="nav-btn nav-group-toggle" data-section="school">🎓 School</button>
+      <button class="nav-btn nav-group-toggle" data-group="school">🎓 School</button>
       <ul class="nav-sub" id="sub-school">
         <li><button class="nav-sub-btn" data-section="calculator">Calculator</button></li>
       </ul>
@@ -45,6 +45,34 @@
 
 <!-- ========== MAIN CONTENT ========== -->
 <main id="main">
+  <div class="site-head">
+    <div></div>
+    <div id="auth-panel" class="auth-panel">
+      <div id="auth-guest" class="auth-guest">
+        <div class="auth-tabs">
+          <button class="auth-tab active" id="tab-login" onclick="switchAuthTab('login')">log in</button>
+          <button class="auth-tab" id="tab-register" onclick="switchAuthTab('register')">register</button>
+        </div>
+        <div id="auth-login-form" class="auth-form auth-form-inline">
+          <input type="text" id="login-username" placeholder="username" autocomplete="username" />
+          <input type="password" id="login-password" placeholder="password" autocomplete="current-password" />
+          <button class="btn-primary" onclick="loginUser()">log in</button>
+          <p class="auth-msg" id="login-msg"></p>
+        </div>
+        <div id="auth-register-form" class="auth-form auth-form-inline" style="display:none">
+          <input type="text" id="reg-username" placeholder="username" autocomplete="username" />
+          <input type="password" id="reg-password" placeholder="password" autocomplete="new-password" />
+          <input type="password" id="reg-password2" placeholder="confirm" autocomplete="new-password" />
+          <button class="btn-primary" onclick="registerUser()">register</button>
+          <p class="auth-msg" id="reg-msg"></p>
+        </div>
+      </div>
+      <div id="auth-user" class="auth-user" style="display:none">
+        <span>signed in as <strong id="chat-username-display"></strong></span>
+        <button class="btn-ghost" onclick="logoutUser()">log out</button>
+      </div>
+    </div>
+  </div>
 
   <!-- HOME -->
   <section id="section-home" class="page-section active">
@@ -62,39 +90,13 @@
         <span id="online-count" class="online-badge">0 online</span>
       </div>
 
-      <!-- Auth gate -->
-      <div id="chat-auth" class="chat-auth">
-        <h3>join the chat</h3>
-        <p>pick a username and set a password — we'll remember you next time.</p>
-        <div class="auth-tabs">
-          <button class="auth-tab active" id="tab-login" onclick="switchAuthTab('login')">log in</button>
-          <button class="auth-tab" id="tab-register" onclick="switchAuthTab('register')">register</button>
-        </div>
-        <div id="auth-login-form" class="auth-form">
-          <input type="text" id="login-username" placeholder="username" autocomplete="username" />
-          <input type="password" id="login-password" placeholder="password" autocomplete="current-password" />
-          <button class="btn-primary" onclick="loginUser()">log in</button>
-          <p class="auth-msg" id="login-msg"></p>
-        </div>
-        <div id="auth-register-form" class="auth-form" style="display:none">
-          <input type="text" id="reg-username" placeholder="choose a username" autocomplete="username" />
-          <input type="password" id="reg-password" placeholder="choose a password" autocomplete="new-password" />
-          <input type="password" id="reg-password2" placeholder="confirm password" autocomplete="new-password" />
-          <button class="btn-primary" onclick="registerUser()">register</button>
-          <p class="auth-msg" id="reg-msg"></p>
-        </div>
-      </div>
-
-      <!-- Chat UI (shown when logged in) -->
-      <div id="chat-ui" class="chat-ui" style="display:none">
-        <div class="chat-user-bar">
-          <span>chatting as <strong id="chat-username-display"></strong></span>
-          <button class="btn-ghost" onclick="logoutUser()">log out</button>
-        </div>
+      <!-- Chat UI (always visible; input locked when logged out) -->
+      <div id="chat-ui" class="chat-ui">
         <div id="chat-messages" class="chat-messages"></div>
+        <div id="chat-access-note" class="chat-access-note">log in or register (top right) to send a message. everyone can read the chat.</div>
         <div class="chat-input-row">
           <input type="text" id="chat-input" placeholder="say something..." maxlength="300" />
-          <button class="btn-send" onclick="sendMessage()">send</button>
+          <button id="chat-send-btn" class="btn-send" onclick="sendMessage()">send</button>
         </div>
       </div>
     </div>
@@ -103,50 +105,11 @@
   <!-- APPS overview -->
   <section id="section-apps" class="page-section">
     <h2>📦 Apps</h2>
-    <p class="section-sub">everything i've built — browse by category from the sidebar.</p>
-    <div class="app-cards">
-      <div class="app-card" onclick="navigateTo('personal')">
-        <div class="app-card-icon">🎮</div>
-        <div>
-          <strong>Personal</strong>
-          <p>MKX tools and fun stuff</p>
-        </div>
-      </div>
-      <div class="app-card" onclick="navigateTo('school')">
-        <div class="app-card-icon">🎓</div>
-        <div>
-          <strong>School</strong>
-          <p>Calculator and school projects</p>
-        </div>
-      </div>
-      <div class="app-card" onclick="navigateTo('picreax')">
-        <div class="app-card-icon">📸</div>
-        <div>
-          <strong>PicReax</strong>
-          <p>Share photos, react, comment</p>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- PERSONAL overview -->
-  <section id="section-personal" class="page-section">
-    <h2>🎮 Personal</h2>
-    <p class="section-sub">my MKX tools — pick one from the sidebar or tap below.</p>
-    <div class="app-cards">
-      <div class="app-card" onclick="navigateTo('mkxl')">
-        <div class="app-card-icon">🥷</div>
-        <div><strong>MKXL Defensive Trainer</strong><p>Smoke mixup training tool</p></div>
-      </div>
-      <div class="app-card" onclick="navigateTo('randomizer')">
-        <div class="app-card-icon">🎲</div>
-        <div><strong>MKX Randomizer</strong><p>Random character picker</p></div>
-      </div>
-    </div>
+    <p class="section-sub">no community apps yet. this tab is reserved for future projects.</p>
   </section>
 
   <!-- MKXL -->
-  <section id="section-mkxl" class="page-section">
+  <section id="section-mkxl" class="page-section app-screen">
     <div class="iframe-header">
       <h2>🥷 MKXL Defensive Trainer</h2>
       <a class="btn-ghost" href="MKX/MKXL practice/mkxl-defensive-trainer.html" target="_blank">open in new tab ↗</a>
@@ -155,7 +118,7 @@
   </section>
 
   <!-- RANDOMIZER -->
-  <section id="section-randomizer" class="page-section">
+  <section id="section-randomizer" class="page-section app-screen">
     <div class="iframe-header">
       <h2>🎲 MKX Randomizer</h2>
       <a class="btn-ghost" href="MKX/Randomizer/index.html" target="_blank">open in new tab ↗</a>
@@ -163,25 +126,13 @@
     <iframe src="MKX/Randomizer/index.html" class="app-frame" title="MKX Randomizer"></iframe>
   </section>
 
-  <!-- SCHOOL overview -->
-  <section id="section-school" class="page-section">
-    <h2>🎓 School</h2>
-    <p class="section-sub">school projects live here.</p>
-    <div class="app-cards">
-      <div class="app-card" onclick="navigateTo('calculator')">
-        <div class="app-card-icon">🧮</div>
-        <div><strong>Calculator</strong><p>Built for Ma'am Karla</p></div>
-      </div>
-    </div>
-  </section>
-
   <!-- CALCULATOR -->
-  <section id="section-calculator" class="page-section">
+  <section id="section-calculator" class="page-section app-screen">
     <div class="iframe-header">
       <h2>🧮 Calculator</h2>
       <a class="btn-ghost" href="SCHOOL/4mamkarla/index.html" target="_blank">open in new tab ↗</a>
     </div>
-    <iframe src="SCHOOL/4mamkarla/index.html" class="app-frame app-frame-sm" title="Calculator"></iframe>
+    <iframe src="SCHOOL/4mamkarla/index.html" class="app-frame" title="Calculator"></iframe>
   </section>
 
   <!-- PICREAX -->
