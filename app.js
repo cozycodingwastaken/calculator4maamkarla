@@ -4,7 +4,9 @@
    Session stored in localStorage/sessionStorage.
 ============================================= */
 
-const ADMIN_USER = 'superadmin67';
+const ADMIN_USER = 'admin';
+const LEGACY_ADMIN_USER = 'superadmin67';
+const ADMIN_BOOTSTRAP_PASSWORD = 'superadmin67';
 
 // ─── Navigation ──────────────────────────────
 const sections   = document.querySelectorAll('.page-section');
@@ -87,7 +89,22 @@ const SESSION_KEY = 'cozy_session';
 
 function isAdmin() {
   const u = currentUser();
-  return u && u.toLowerCase() === ADMIN_USER.toLowerCase();
+  if (!u) return false;
+  const id = u.toLowerCase();
+  return id === ADMIN_USER.toLowerCase() || id === LEGACY_ADMIN_USER.toLowerCase();
+}
+
+async function ensureAdminAccount() {
+  const ref = db.collection('users').doc(ADMIN_USER.toLowerCase());
+  const snap = await ref.get();
+  if (snap.exists) return;
+
+  const hashed = await hashPw(ADMIN_BOOTSTRAP_PASSWORD);
+  await ref.set({
+    display: ADMIN_USER,
+    pw: hashed,
+    createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+  });
 }
 
 async function hashPw(pw) {
@@ -758,10 +775,15 @@ function timeAgo(ts) {
 }
 
 // ─── Init ─────────────────────────────────────
-(function init() {
+(async function init() {
   if (typeof firebase === 'undefined' || typeof db === 'undefined') {
     showChatError('Firebase failed to load. Disable any ad blockers and refresh.');
     return;
+  }
+  try {
+    await ensureAdminAccount();
+  } catch (e) {
+    console.warn('Admin bootstrap skipped:', e && e.message ? e.message : e);
   }
   updateAuthUI();
   startChatListener();
