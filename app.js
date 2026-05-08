@@ -741,7 +741,7 @@ const COZYAI_RANDOM_RESPONSES = [
   '?',
   'Type mo ulit, di ko parin babasahin',
   'Bading ka ba?',
-  'Hel-- WAHAHAHA ulol',
+  'Gago.',
   './.',
   'Sige lang.',
   'Pass.',
@@ -789,6 +789,9 @@ const COZYAI_KEYWORD_RESPONSES = {
   ],
   shet: [
     'Pakshet ka.',
+  ],
+  gago: [
+    'Gago ka rin.',
   ],
 };
 
