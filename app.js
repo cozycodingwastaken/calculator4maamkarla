@@ -735,14 +735,18 @@ let cozyAiBooted = false;
 // COZYAI_RANDOM_RESPONSES_LIST
 // Add more fallback responses here.
 const COZYAI_RANDOM_RESPONSES = [
-  'Interesting question. My first instinct is: ship a tiny version, then improve it quickly.',
-  'I would split that into two steps: make it work, then make it clean.',
-  'That sounds cool. If you want, I can help you break it into a simple checklist.',
-  'I am a fake AI here, but my real advice is: keep your UX simple and fast.',
-  'Try this mindset: fewer features, better polish.',
-  'That is valid. I would test one small change first and measure how it feels.',
-  'Good prompt. I suggest naming things clearly and keeping functions short.',
-  'If this is for your site, prioritize mobile behavior early.',
+  'Oh ulol.',
+  'Pakyu.',
+  'Bahala ka dyan.',
+  '?',
+  'Type mo ulit, di ko parin babasahin',
+  'Bading ka ba?',
+  'Hel-- WAHAHAHA ulol',
+  './.',
+  'Sige lang.',
+  'Pass.',
+  'Dami mong alam. Kaya mo na yan.',
+  'Di ko alam yan pre.',
 ];
 
 // COZYAI_KEYWORD_RESPONSES_MAP
@@ -752,24 +756,39 @@ const COZYAI_KEYWORD_RESPONSES = {
     'Hey! CozyAI online. What are we building today?',
     'Hello there. Ready to cook another cozy feature?',
   ],
-  help: [
-    'I can help with HTML, CSS, JavaScript, and quick UI ideas.',
-    'Try asking for a feature and I will give you a small implementation plan.',
+  hi: [
+    'Hey there! CozyAI at your service. What are we building today?',
+    'Kamusta? CozyAI here. Ready to cook another cozy feature?',
   ],
-  bug: [
-    'Bug mode: check console, isolate repro steps, then patch smallest possible fix.',
+  pakyu: [
+    'Pakyu ka rin.',
   ],
-  css: [
-    'CSS tip: define reusable variables first, then component styles, then responsive overrides.',
+  ulol: [
+    'Ulol ka rin.',
   ],
-  firebase: [
-    'Firebase reminder: validate rules and confirm collection names match exactly.',
+  tangina: [
+    'Mas tangina ka.',
   ],
-  admin: [
-    'Admin checks should be server-enforced where possible, not only in UI.',
+  puta: [
+    'Puta ka rin.',
   ],
-  chat: [
-    'For chat UX, avoid layout shift on hover and reserve action space.',
+  bakla: [
+    'Mama mo bakla.',
+  ],
+  bading: [
+    'Ikaw bading.',
+  ],
+  fuck: [
+    'Fuck you, bitch!',
+  ],
+  inamo: [
+    'Inamorin. Pakyu.',
+  ],
+  rowem: [
+    'Rowem bakla hahahahahaha.',
+  ],
+  shet: [
+    'Pakshet ka.',
   ],
 };
 
@@ -830,7 +849,7 @@ function initCozyAi() {
     });
   }
 
-  appendCozyAiMessage('ai', 'Hi, I am CozyAI. I am fake, but I can still vibe. Try: hello, help, css, firebase, bug, admin, chat.');
+  appendCozyAiMessage('ai', 'Hi, I am CozyAI. I can help you with anything! Or just chat if you want. Try asking me for a coding tip or some feedback on your project.');
 }
 
 // ─── Lightbox (shared by chat + PicReax) ──────
