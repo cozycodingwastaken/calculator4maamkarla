@@ -229,6 +229,7 @@ let editTarget        = null;   // { id, originalText }
 let chatMessageLookup = {};
 let chatReactionMenu  = null;   // currently open popup id
 let chatMoreMenu      = null;   // currently open action menu id
+let lastChatMessages  = [];
 
 const CHAT_REACTIONS = ['❤️', '😂', '😮', '😢', '🔥', '👍'];
 
@@ -334,6 +335,7 @@ function renderMessages(msgs) {
   const container = document.getElementById('chat-messages');
   const user      = currentUser();
   const admin     = isAdmin();
+  lastChatMessages = msgs;
   chatMessageLookup = {};
   msgs.forEach(function(m) { chatMessageLookup[m.id] = m; });
 
@@ -705,6 +707,7 @@ function updateAuthUI() {
   }
 
   updateChatAccessState();
+  if (lastChatMessages.length) renderMessages(lastChatMessages);
   if (typeof updatePicreaxUploadVisibility === 'function') updatePicreaxUploadVisibility();
   if (user) updateOnlineCount();
 }
