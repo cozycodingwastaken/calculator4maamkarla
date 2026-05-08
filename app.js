@@ -187,6 +187,7 @@ function showMsg(el, text, ok = false) {
 
 // ─── Chat (Firestore real-time) ──────────────
 let chatUnsubscribe = null;
+const CHAT_REACTIONS = ['❤️', '😂', '😮', '🔥'];
 
 function showChatError(msg) {
   const container = document.getElementById('chat-messages');
@@ -221,6 +222,7 @@ function sendMessage() {
     user: user,
     text: text,
     time: firebase.firestore.FieldValue.serverTimestamp(),
+    reactions: {},
   });
 
   input.value = '';
@@ -233,11 +235,27 @@ function renderMessages(msgs) {
 
   msgs.forEach(function(m) {
     const ts  = m.time && m.time.toDate ? m.time.toDate().getTime() : m.time;
+    const reactions = m.reactions || {};
+    const reactionButtons = CHAT_REACTIONS.map(function(emoji) {
+      const users = Array.isArray(reactions[emoji]) ? reactions[emoji] : [];
+      const count = users.length;
+      const reacted = user && users.includes(user);
+      const disabled = user ? '' : ' disabled';
+      const title = user
+        ? (count ? escapeHtml(users.join(', ')) : 'react')
+        : 'log in to react';
+
+      return '<button class="chat-reaction-btn' + (reacted ? ' reacted' : '') + '" onclick="toggleChatReaction(\'' + m.id + '\',\'' + emoji + '\')" title="' + title + '"' + disabled + '>' +
+        emoji + (count ? ' <span class="count">' + count + '</span>' : '') +
+      '</button>';
+    }).join('');
+
     const div = document.createElement('div');
     div.className = 'chat-msg ' + (m.user === user ? 'mine' : 'theirs');
     div.innerHTML =
       '<div class="bubble">' + escapeHtml(m.text) + '</div>' +
-      '<div class="msg-meta">' + (m.user === user ? 'you' : escapeHtml(m.user)) + ' - ' + timeAgo(ts) + '</div>';
+      '<div class="msg-meta">' + (m.user === user ? 'you' : escapeHtml(m.user)) + ' - ' + timeAgo(ts) + '</div>' +
+      '<div class="chat-reactions">' + reactionButtons + '</div>';
     container.appendChild(div);
   });
 
@@ -248,6 +266,27 @@ function renderMessages(msgs) {
 document.getElementById('chat-input').addEventListener('keydown', function(e) {
   if (e.key === 'Enter') sendMessage();
 });
+
+async function toggleChatReaction(messageId, emoji) {
+  const user = currentUser();
+  if (!user) return;
+
+  const ref = db.collection('chat').doc(messageId);
+  const snap = await ref.get();
+  if (!snap.exists) return;
+
+  const reactions = snap.data().reactions || {};
+  const users = Array.isArray(reactions[emoji]) ? reactions[emoji] : [];
+  const idx = users.indexOf(user);
+
+  if (idx === -1) users.push(user);
+  else users.splice(idx, 1);
+
+  if (users.length) reactions[emoji] = users;
+  else delete reactions[emoji];
+
+  await ref.update({ reactions });
+}
 
 // ─── Online count ─────────────────────────────
 const PRESENCE_KEY = 'cozy_presence';
