@@ -15,6 +15,7 @@
   <div class="sidebar-logo">cozyapps</div>
   <ul class="sidebar-nav">
     <li><button class="nav-btn active" data-section="home">💬 Live Chat</button></li>
+    <li><button class="nav-btn" data-section="cozyai">🤖 CozyAI</button></li>
     <li>
       <button class="nav-btn" data-section="apps">📦 Apps</button>
     </li>
@@ -102,6 +103,31 @@
           <input type="text" id="chat-input" placeholder="say something..." maxlength="300" />
           <button id="chat-send-btn" class="btn-send" onclick="sendMessage()">send</button>
         </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- COZYAI -->
+  <section id="section-cozyai" class="page-section">
+    <h2>🤖 CozyAI</h2>
+    <p class="section-sub">fake assistant with randomized replies and keyword triggers.</p>
+
+    <div class="cozyai-shell">
+      <div class="cozyai-topbar">
+        <div class="cozyai-title">CozyAI</div>
+        <div class="cozyai-subtitle">Experimental assistant</div>
+      </div>
+
+      <div id="cozyai-messages" class="cozyai-messages"></div>
+
+      <div class="cozyai-input-row">
+        <input
+          type="text"
+          id="cozyai-input"
+          placeholder="Ask CozyAI anything..."
+          maxlength="400"
+        />
+        <button id="cozyai-send-btn" class="btn-send" onclick="sendCozyAiMessage()">Send</button>
       </div>
     </div>
   </section>

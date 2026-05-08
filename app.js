@@ -729,6 +729,110 @@ function updateAuthUI() {
   if (user) updateOnlineCount();
 }
 
+// ─── CozyAI (fake AI) ────────────────────────
+let cozyAiBooted = false;
+
+// COZYAI_RANDOM_RESPONSES_LIST
+// Add more fallback responses here.
+const COZYAI_RANDOM_RESPONSES = [
+  'Interesting question. My first instinct is: ship a tiny version, then improve it quickly.',
+  'I would split that into two steps: make it work, then make it clean.',
+  'That sounds cool. If you want, I can help you break it into a simple checklist.',
+  'I am a fake AI here, but my real advice is: keep your UX simple and fast.',
+  'Try this mindset: fewer features, better polish.',
+  'That is valid. I would test one small change first and measure how it feels.',
+  'Good prompt. I suggest naming things clearly and keeping functions short.',
+  'If this is for your site, prioritize mobile behavior early.',
+];
+
+// COZYAI_KEYWORD_RESPONSES_MAP
+// Add keyword keys and their responses here. If user text contains the key, one of these replies is used.
+const COZYAI_KEYWORD_RESPONSES = {
+  hello: [
+    'Hey! CozyAI online. What are we building today?',
+    'Hello there. Ready to cook another cozy feature?',
+  ],
+  help: [
+    'I can help with HTML, CSS, JavaScript, and quick UI ideas.',
+    'Try asking for a feature and I will give you a small implementation plan.',
+  ],
+  bug: [
+    'Bug mode: check console, isolate repro steps, then patch smallest possible fix.',
+  ],
+  css: [
+    'CSS tip: define reusable variables first, then component styles, then responsive overrides.',
+  ],
+  firebase: [
+    'Firebase reminder: validate rules and confirm collection names match exactly.',
+  ],
+  admin: [
+    'Admin checks should be server-enforced where possible, not only in UI.',
+  ],
+  chat: [
+    'For chat UX, avoid layout shift on hover and reserve action space.',
+  ],
+};
+
+function randomFrom(list) {
+  return list[Math.floor(Math.random() * list.length)];
+}
+
+function getCozyAiReply(userText) {
+  const text = (userText || '').toLowerCase();
+
+  for (const keyword in COZYAI_KEYWORD_RESPONSES) {
+    if (text.includes(keyword)) {
+      return randomFrom(COZYAI_KEYWORD_RESPONSES[keyword]);
+    }
+  }
+
+  return randomFrom(COZYAI_RANDOM_RESPONSES);
+}
+
+function appendCozyAiMessage(role, text) {
+  const container = document.getElementById('cozyai-messages');
+  if (!container) return;
+
+  const el = document.createElement('div');
+  el.className = 'cozyai-msg ' + (role === 'user' ? 'user' : 'ai');
+  el.innerHTML =
+    '<span class="cozyai-msg-label">' + (role === 'user' ? 'You' : 'CozyAI') + '</span>' +
+    escapeHtml(text);
+
+  container.appendChild(el);
+  container.scrollTop = container.scrollHeight;
+}
+
+function sendCozyAiMessage() {
+  const input = document.getElementById('cozyai-input');
+  if (!input) return;
+
+  const text = input.value.trim();
+  if (!text) return;
+
+  appendCozyAiMessage('user', text);
+  input.value = '';
+
+  const reply = getCozyAiReply(text);
+  setTimeout(function() {
+    appendCozyAiMessage('ai', reply);
+  }, 220);
+}
+
+function initCozyAi() {
+  if (cozyAiBooted) return;
+  cozyAiBooted = true;
+
+  const input = document.getElementById('cozyai-input');
+  if (input) {
+    input.addEventListener('keydown', function(e) {
+      if (e.key === 'Enter') sendCozyAiMessage();
+    });
+  }
+
+  appendCozyAiMessage('ai', 'Hi, I am CozyAI. I am fake, but I can still vibe. Try: hello, help, css, firebase, bug, admin, chat.');
+}
+
 // ─── Lightbox (shared by chat + PicReax) ──────
 function openLightbox(src) {
   let box = document.getElementById('lightbox');
@@ -788,4 +892,5 @@ function timeAgo(ts) {
   updateAuthUI();
   startChatListener();
   startPresenceListener();
+  initCozyAi();
 })();
