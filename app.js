@@ -459,8 +459,22 @@ function toggleReactPicker(msgId, btn) {
     popup.appendChild(b);
   });
 
-  // Position near button
-  btn.closest('.msg-side-actions').appendChild(popup);
+  // Position near button, clamped to viewport
+  document.body.appendChild(popup);
+  (function positionPopup() {
+    var rect = btn.getBoundingClientRect();
+    var popW = popup.offsetWidth || 220;
+    var popH = popup.offsetHeight || 44;
+    var top = rect.top + rect.height / 2 - popH / 2;
+    // prefer opening above the button row if near bottom
+    top = Math.max(8, Math.min(top, window.innerHeight - popH - 8));
+    // try left of button first, fall back to right if it clips
+    var left = rect.left - popW - 6;
+    if (left < 8) left = rect.right + 6;
+    if (left + popW > window.innerWidth - 8) left = window.innerWidth - popW - 8;
+    popup.style.top = top + 'px';
+    popup.style.left = left + 'px';
+  })();
 
   // Close on outside click
   setTimeout(function() {
