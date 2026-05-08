@@ -194,6 +194,8 @@ function showMsg(el, text, ok = false) {
 let chatUnsubscribe = null;
 const CHAT_REACTIONS = ['❤️', '😂', '😮', '🔥'];
 let presenceUnsubscribe = null;
+let replyTarget = null;
+let chatMessageLookup = {};
 
 function showChatError(msg) {
   const container = document.getElementById('chat-messages');
@@ -224,23 +226,44 @@ function sendMessage() {
   const user = currentUser();
   if (!user) return;
 
-  db.collection('chat').add({
+  const payload = {
     user: user,
     text: text,
     time: firebase.firestore.FieldValue.serverTimestamp(),
     reactions: {},
-  });
+  };
+
+  if (replyTarget && replyTarget.id) {
+    payload.replyTo = {
+      id: replyTarget.id,
+      user: replyTarget.user,
+      text: replyTarget.text,
+    };
+  }
+
+  db.collection('chat').add(payload);
 
   input.value = '';
+  clearReplyTarget();
 }
 
 function renderMessages(msgs) {
   const container = document.getElementById('chat-messages');
   const user      = currentUser();
+  chatMessageLookup = {};
+
+  msgs.forEach(function(m) {
+    chatMessageLookup[m.id] = m;
+  });
+
   container.innerHTML = '';
 
   msgs.forEach(function(m) {
     const ts  = m.time && m.time.toDate ? m.time.toDate().getTime() : m.time;
+    const replyTo = m.replyTo || null;
+    const replySnippet = replyTo
+      ? '<div class="chat-reply-snippet"><span class="label">reply to ' + escapeHtml(replyTo.user || 'unknown') + ':</span> ' + escapeHtml((replyTo.text || '').slice(0, 100)) + '</div>'
+      : '';
     const reactions = m.reactions || {};
     const reactionButtons = CHAT_REACTIONS.map(function(emoji) {
       const users = Array.isArray(reactions[emoji]) ? reactions[emoji] : [];
@@ -256,16 +279,20 @@ function renderMessages(msgs) {
       '</button>';
     }).join('');
 
+    const replyDisabled = user ? '' : ' disabled';
+    const replyButton = '<button class="chat-action-btn" onclick="setReplyTarget(\'' + m.id + '\')" title="reply"' + replyDisabled + '>reply</button>';
+
     const div = document.createElement('div');
     div.className = 'chat-msg ' + (m.user === user ? 'mine' : 'theirs');
     div.innerHTML =
-      '<div class="bubble">' + escapeHtml(m.text) + '</div>' +
+      '<div class="bubble">' + replySnippet + escapeHtml(m.text) + '</div>' +
       '<div class="msg-meta">' + (m.user === user ? 'you' : escapeHtml(m.user)) + ' - ' + timeAgo(ts) + '</div>' +
-      '<div class="chat-reactions">' + reactionButtons + '</div>';
+      '<div class="chat-reactions">' + reactionButtons + replyButton + '</div>';
     container.appendChild(div);
   });
 
   container.scrollTop = container.scrollHeight;
+  renderReplyComposer();
   updateOnlineCount();
 }
 
@@ -292,6 +319,53 @@ async function toggleChatReaction(messageId, emoji) {
   else delete reactions[emoji];
 
   await ref.update({ reactions });
+}
+
+function setReplyTarget(messageId) {
+  const user = currentUser();
+  if (!user) return;
+
+  const msg = chatMessageLookup[messageId];
+  if (!msg) return;
+
+  replyTarget = {
+    id: messageId,
+    user: msg.user || 'unknown',
+    text: (msg.text || '').slice(0, 140),
+  };
+  renderReplyComposer();
+}
+
+function clearReplyTarget() {
+  replyTarget = null;
+  renderReplyComposer();
+}
+
+function renderReplyComposer() {
+  const row = document.querySelector('.chat-input-row');
+  if (!row) return;
+
+  let bar = document.getElementById('chat-reply-bar');
+  if (!bar) {
+    bar = document.createElement('div');
+    bar.id = 'chat-reply-bar';
+    bar.className = 'chat-reply-bar';
+    row.parentNode.insertBefore(bar, row);
+  }
+
+  if (!replyTarget || !currentUser()) {
+    bar.style.display = 'none';
+    bar.innerHTML = '';
+    return;
+  }
+
+  bar.style.display = 'flex';
+  bar.innerHTML =
+    '<div class="reply-preview">' +
+      '<span class="label">replying to ' + escapeHtml(replyTarget.user) + '</span>' +
+      '<span class="text">' + escapeHtml(replyTarget.text) + '</span>' +
+    '</div>' +
+    '<button class="chat-reply-cancel" onclick="clearReplyTarget()" aria-label="Cancel reply">cancel</button>';
 }
 
 // ─── Online count (shared presence) ───────────
@@ -351,6 +425,8 @@ function updateChatAccessState() {
     input.placeholder = 'log in to send a message';
     note.style.display = 'block';
   }
+
+  renderReplyComposer();
 }
 
 function updateAuthUI() {
