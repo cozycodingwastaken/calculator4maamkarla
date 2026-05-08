@@ -372,14 +372,13 @@ function renderMessages(msgs) {
           e + ' <span>' + users.length + '</span></button>';
       }).join('');
 
-    // Inline action buttons (reply, edit, delete)
-    const replyBtn  = user ? '<button class="msg-action" onclick="setReplyTarget(\'' + m.id + '\')">↩</button>' : '';
-    const editBtn   = isMine ? '<button class="msg-action" onclick="startEdit(\'' + m.id + '\')">✏</button>' : '';
-    const deleteBtn = (isMine || admin) ? '<button class="msg-action danger" onclick="deleteChatMsg(\'' + m.id + '\')">🗑</button>' : '';
-    // Reaction picker trigger
-    const reactBtn  = user ? '<button class="msg-action" onclick="toggleReactPicker(\'' + m.id + '\',this)">😊</button>' : '';
+    // Side action buttons (react + reply always; edit + delete for own/admin)
+    const replyBtn  = user ? '<button class="msg-side-btn" title="reply" onclick="setReplyTarget(\'' + m.id + '\')">↩</button>' : '';
+    const editBtn   = isMine ? '<button class="msg-side-btn" title="edit" onclick="startEdit(\'' + m.id + '\')">✏</button>' : '';
+    const deleteBtn = (isMine || admin) ? '<button class="msg-side-btn danger" title="delete" onclick="deleteChatMsg(\'' + m.id + '\')">🗑</button>' : '';
+    const reactBtn  = user ? '<button class="msg-side-btn" title="react" onclick="toggleReactPicker(\'' + m.id + '\',this)">😊</button>' : '';
 
-    const actionsHtml = '<div class="msg-actions">' + reactBtn + replyBtn + editBtn + deleteBtn + '</div>';
+    const sideActionsHtml = '<div class="msg-side-actions">' + reactBtn + replyBtn + editBtn + deleteBtn + '</div>';
 
     const div = document.createElement('div');
     div.className = 'chat-msg ' + (isMine ? 'mine' : 'theirs');
@@ -393,14 +392,14 @@ function renderMessages(msgs) {
     div.innerHTML =
       avatarHtml +
       '<div class="msg-body">' +
-        actionsHtml +
         '<div class="bubble"' + bubbleStyle + '>' +
           replySnippet +
           bodyHtml +
         '</div>' +
         (reactSummary ? '<div class="chat-reacted-row">' + reactSummary + '</div>' : '') +
         '<div class="msg-meta">' + (isMine ? 'you' : escapeHtml(m.user || 'unknown')) + ' · ' + timeAgo(ts) + '</div>' +
-      '</div>';
+      '</div>' +
+      sideActionsHtml;
 
     container.appendChild(div);
   });
@@ -432,7 +431,7 @@ function toggleReactPicker(msgId, btn) {
   });
 
   // Position near button
-  btn.closest('.msg-actions').appendChild(popup);
+  btn.closest('.msg-side-actions').appendChild(popup);
 
   // Close on outside click
   setTimeout(function() {

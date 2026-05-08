@@ -363,30 +363,34 @@ html, body {
 .chat-msg.mine  .msg-body { align-items: flex-end; }
 .chat-msg.theirs .msg-body { align-items: flex-start; }
 
-/* Action buttons (hover reveal) */
-.msg-actions {
+/* Side action buttons (shown on hover, beside the bubble) */
+.msg-side-actions {
   display: none;
-  gap: 4px;
-  margin-bottom: 4px;
+  flex-direction: column;
+  gap: 3px;
+  align-self: center;
+  flex-shrink: 0;
   position: relative;
 }
 
-.chat-msg:hover .msg-actions { display: flex; }
+.chat-msg:hover .msg-side-actions { display: flex; }
 
-.msg-action {
+.msg-side-btn {
   background: var(--bg3);
   border: 1px solid var(--border);
   border-radius: 99px;
-  padding: 2px 7px;
-  font-size: 12px;
+  width: 28px; height: 28px;
+  padding: 0;
+  font-size: 13px;
   cursor: pointer;
   color: var(--text-muted);
   font-family: inherit;
-  line-height: 1.4;
+  display: flex; align-items: center; justify-content: center;
+  transition: border-color 0.12s, color 0.12s;
 }
 
-.msg-action:hover { border-color: var(--accent); color: var(--text); }
-.msg-action.danger:hover { border-color: #f87171; color: #f87171; }
+.msg-side-btn:hover { border-color: var(--accent); color: var(--text); }
+.msg-side-btn.danger:hover { border-color: #f87171; color: #f87171; }
 
 /* Bubble */
 .bubble {
@@ -442,8 +446,8 @@ html, body {
 /* Reaction picker popup */
 .react-picker-popup {
   position: absolute;
-  bottom: calc(100% + 4px);
-  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
   background: var(--bg2);
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
@@ -452,7 +456,12 @@ html, body {
   gap: 4px;
   z-index: 500;
   box-shadow: var(--shadow);
+  white-space: nowrap;
 }
+
+/* popup opens toward the bubble */
+.chat-msg.theirs .react-picker-popup { right: calc(100% + 6px); left: auto; }
+.chat-msg.mine   .react-picker-popup { left: calc(100% + 6px);  right: auto; }
 
 .react-picker-popup button {
   background: none;
