@@ -95,6 +95,10 @@
         <div id="chat-messages" class="chat-messages"></div>
         <div id="chat-access-note" class="chat-access-note">log in or register (top right) to send a message.</div>
         <div class="chat-input-row">
+          <label id="chat-img-btn" class="chat-img-btn" title="Send image (or Ctrl+V to paste)">
+            📎
+            <input type="file" id="chat-file-input" accept="image/*" style="display:none" />
+          </label>
           <input type="text" id="chat-input" placeholder="say something..." maxlength="300" />
           <button id="chat-send-btn" class="btn-send" onclick="sendMessage()">send</button>
         </div>

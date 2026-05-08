@@ -4,6 +4,8 @@
    Session stored in localStorage/sessionStorage.
 ============================================= */
 
+const ADMIN_USER = 'superadmin67';
+
 // ─── Navigation ──────────────────────────────
 const sections   = document.querySelectorAll('.page-section');
 const navBtns    = document.querySelectorAll('.nav-btn');
@@ -82,6 +84,11 @@ function closeMobileSidebar() {
 
 // ─── Auth ─────────────────────────────────────
 const SESSION_KEY = 'cozy_session';
+
+function isAdmin() {
+  const u = currentUser();
+  return u && u.toLowerCase() === ADMIN_USER.toLowerCase();
+}
 
 async function hashPw(pw) {
   const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(pw));
@@ -178,7 +185,6 @@ function logoutUser() {
   if (user && typeof db !== 'undefined') {
     db.collection('presence').doc(user.toLowerCase()).delete().catch(function() {});
   }
-
   clearSession();
   document.getElementById('login-username').value = '';
   document.getElementById('login-password').value = '';
@@ -190,17 +196,45 @@ function showMsg(el, text, ok = false) {
   el.className   = 'auth-msg' + (ok ? ' ok' : '');
 }
 
+// ─── User identity colours + avatars ──────────
+// Deterministic per-username: hash username → pick colour + emoji
+const USER_COLORS = [
+  '#a78bfa','#f472b6','#34d399','#fbbf24','#60a5fa',
+  '#f87171','#a3e635','#2dd4bf','#fb923c','#e879f9',
+];
+const USER_EMOJIS = [
+  '🐱','🦊','🐻','🐼','🐸','🐺','🐯','🦁','🐙','🦋',
+  '🐢','🦄','🐝','🦉','🐬','🦀','🐲','🦊','🐨','🦝',
+];
+
+function strHash(str) {
+  let h = 0;
+  for (let i = 0; i < str.length; i++) h = (h * 31 + str.charCodeAt(i)) >>> 0;
+  return h;
+}
+
+function userColor(username) {
+  return USER_COLORS[strHash(username.toLowerCase()) % USER_COLORS.length];
+}
+
+function userEmoji(username) {
+  return USER_EMOJIS[strHash(username.toLowerCase()) % USER_EMOJIS.length];
+}
+
 // ─── Chat (Firestore real-time) ──────────────
-let chatUnsubscribe = null;
-const CHAT_REACTIONS = ['❤️', '😂', '😮', '🔥'];
+let chatUnsubscribe   = null;
 let presenceUnsubscribe = null;
-let replyTarget = null;
+let replyTarget       = null;
+let editTarget        = null;   // { id, originalText }
 let chatMessageLookup = {};
+let chatReactionMenu  = null;   // currently open popup id
+
+const CHAT_REACTIONS = ['❤️', '😂', '😮', '😢', '🔥', '👍'];
 
 function showChatError(msg) {
   const container = document.getElementById('chat-messages');
   if (!container) return;
-  container.innerHTML = '<p style="color:#f87171;font-size:13px;padding:12px;">warning ' + msg + '</p>';
+  container.innerHTML = '<p style="color:#f87171;font-size:13px;padding:12px;">⚠ ' + msg + '</p>';
 }
 
 function startChatListener() {
@@ -218,31 +252,79 @@ function startChatListener() {
     );
 }
 
+// Upload image to Cloudinary and post as chat message
+async function sendChatImage(file) {
+  const user = currentUser();
+  if (!user || !file) return;
+
+  if (!file.type.startsWith('image/')) { alert('Only image files are supported.'); return; }
+  if (file.size > 10 * 1024 * 1024) { alert('Image too large. Max 10MB.'); return; }
+
+  const label = document.getElementById('chat-img-btn');
+  if (label) label.textContent = '⏳';
+
+  try {
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('upload_preset', 'ywthyinx');
+
+    const res = await fetch('https://api.cloudinary.com/v1_1/dokmgafq4/image/upload', {
+      method: 'POST',
+      body: formData,
+    });
+    if (!res.ok) throw new Error('Upload failed: ' + res.statusText);
+
+    const data   = await res.json();
+    const imgUrl = data.secure_url;
+
+    const payload = {
+      user,
+      text:      '',
+      imgUrl,
+      time:      firebase.firestore.FieldValue.serverTimestamp(),
+      reactions: {},
+    };
+    if (replyTarget && replyTarget.id) {
+      payload.replyTo = { id: replyTarget.id, user: replyTarget.user, text: replyTarget.text };
+    }
+    await db.collection('chat').add(payload);
+    clearReplyTarget();
+  } catch (e) {
+    alert('Image send failed: ' + e.message);
+  } finally {
+    if (label) label.textContent = '📎';
+  }
+}
+
 function sendMessage() {
   const input = document.getElementById('chat-input');
   const text  = input.value.trim();
-  if (!text) return;
-
-  const user = currentUser();
+  const user  = currentUser();
   if (!user) return;
 
+  // If in edit mode, update existing message
+  if (editTarget) {
+    if (!text) return;
+    db.collection('chat').doc(editTarget.id).update({ text, edited: true }).catch(function() {});
+    input.value = '';
+    cancelEdit();
+    return;
+  }
+
+  if (!text) return;
+
   const payload = {
-    user: user,
-    text: text,
-    time: firebase.firestore.FieldValue.serverTimestamp(),
+    user,
+    text,
+    time:      firebase.firestore.FieldValue.serverTimestamp(),
     reactions: {},
   };
 
   if (replyTarget && replyTarget.id) {
-    payload.replyTo = {
-      id: replyTarget.id,
-      user: replyTarget.user,
-      text: replyTarget.text,
-    };
+    payload.replyTo = { id: replyTarget.id, user: replyTarget.user, text: replyTarget.text };
   }
 
   db.collection('chat').add(payload);
-
   input.value = '';
   clearReplyTarget();
 }
@@ -250,90 +332,148 @@ function sendMessage() {
 function renderMessages(msgs) {
   const container = document.getElementById('chat-messages');
   const user      = currentUser();
+  const admin     = isAdmin();
   chatMessageLookup = {};
+  msgs.forEach(function(m) { chatMessageLookup[m.id] = m; });
 
-  msgs.forEach(function(m) {
-    chatMessageLookup[m.id] = m;
-  });
+  // Preserve scroll position if already near bottom
+  const atBottom = container.scrollHeight - container.scrollTop - container.clientHeight < 80;
 
   container.innerHTML = '';
 
   msgs.forEach(function(m) {
-    const ts  = m.time && m.time.toDate ? m.time.toDate().getTime() : m.time;
-    const replyTo = m.replyTo || null;
+    const ts       = m.time && m.time.toDate ? m.time.toDate().getTime() : m.time;
+    const isMine   = m.user === user;
+    const color    = userColor(m.user || 'anon');
+    const emoji    = userEmoji(m.user || 'anon');
+
+    // Reply snippet
+    const replyTo  = m.replyTo || null;
     const replySnippet = replyTo
-      ? '<div class="chat-reply-snippet"><span class="label">reply to ' + escapeHtml(replyTo.user || 'unknown') + ':</span> ' + escapeHtml((replyTo.text || '').slice(0, 100)) + '</div>'
+      ? '<div class="chat-reply-snippet"><span class="label">↩ ' + escapeHtml(replyTo.user || 'unknown') + ':</span> ' + escapeHtml((replyTo.text || '').slice(0, 80)) + '</div>'
       : '';
-    const reactions = m.reactions || {};
-    const reactionButtons = CHAT_REACTIONS.map(function(emoji) {
-      const users = Array.isArray(reactions[emoji]) ? reactions[emoji] : [];
-      const count = users.length;
-      const reacted = user && users.includes(user);
-      const disabled = user ? '' : ' disabled';
-      const title = user
-        ? (count ? escapeHtml(users.join(', ')) : 'react')
-        : 'log in to react';
 
-      return '<button class="chat-reaction-btn' + (reacted ? ' reacted' : '') + '" onclick="toggleChatReaction(\'' + m.id + '\',\'' + emoji + '\')" title="' + title + '"' + disabled + '>' +
-        emoji + (count ? ' <span class="count">' + count + '</span>' : '') +
-      '</button>';
-    }).join('');
+    // Body: text or image
+    let bodyHtml;
+    if (m.imgUrl) {
+      bodyHtml = '<img class="chat-bubble-img" src="' + escapeHtml(m.imgUrl) + '" alt="image" onclick="openLightbox(\'' + escapeHtml(m.imgUrl) + '\')" />';
+    } else {
+      bodyHtml = escapeHtml(m.text || '') + (m.edited ? ' <span class="edited-tag">(edited)</span>' : '');
+    }
 
-    const replyDisabled = user ? '' : ' disabled';
-    const replyButton = '<button class="chat-action-btn" onclick="setReplyTarget(\'' + m.id + '\')" title="reply"' + replyDisabled + '>reply</button>';
+    // Existing reaction counts (only those with at least 1)
+    const reactions   = m.reactions || {};
+    const reactSummary = CHAT_REACTIONS
+      .filter(function(e) { return Array.isArray(reactions[e]) && reactions[e].length > 0; })
+      .map(function(e) {
+        const users   = reactions[e];
+        const reacted = user && users.includes(user);
+        return '<button class="chat-reacted-pip' + (reacted ? ' mine' : '') + '" onclick="toggleChatReaction(\'' + m.id + '\',\'' + e + '\')" title="' + escapeHtml(users.join(', ')) + '">' +
+          e + ' <span>' + users.length + '</span></button>';
+      }).join('');
+
+    // Inline action buttons (reply, edit, delete)
+    const replyBtn  = user ? '<button class="msg-action" onclick="setReplyTarget(\'' + m.id + '\')">↩</button>' : '';
+    const editBtn   = isMine ? '<button class="msg-action" onclick="startEdit(\'' + m.id + '\')">✏</button>' : '';
+    const deleteBtn = (isMine || admin) ? '<button class="msg-action danger" onclick="deleteChatMsg(\'' + m.id + '\')">🗑</button>' : '';
+    // Reaction picker trigger
+    const reactBtn  = user ? '<button class="msg-action" onclick="toggleReactPicker(\'' + m.id + '\',this)">😊</button>' : '';
+
+    const actionsHtml = '<div class="msg-actions">' + reactBtn + replyBtn + editBtn + deleteBtn + '</div>';
 
     const div = document.createElement('div');
-    div.className = 'chat-msg ' + (m.user === user ? 'mine' : 'theirs');
+    div.className = 'chat-msg ' + (isMine ? 'mine' : 'theirs');
+    div.dataset.id = m.id;
+
+    const avatarHtml = isMine ? '' :
+      '<div class="chat-avatar" style="background:' + color + '" title="' + escapeHtml(m.user || 'unknown') + '">' + emoji + '</div>';
+
+    const bubbleStyle = isMine ? '' : ' style="background:' + color + '1a; border-color:' + color + '40"';
+
     div.innerHTML =
-      '<div class="bubble">' + replySnippet + escapeHtml(m.text) + '</div>' +
-      '<div class="msg-meta">' + (m.user === user ? 'you' : escapeHtml(m.user)) + ' - ' + timeAgo(ts) + '</div>' +
-      '<div class="chat-reactions">' + reactionButtons + replyButton + '</div>';
+      avatarHtml +
+      '<div class="msg-body">' +
+        actionsHtml +
+        '<div class="bubble"' + bubbleStyle + '>' +
+          replySnippet +
+          bodyHtml +
+        '</div>' +
+        (reactSummary ? '<div class="chat-reacted-row">' + reactSummary + '</div>' : '') +
+        '<div class="msg-meta">' + (isMine ? 'you' : escapeHtml(m.user || 'unknown')) + ' · ' + timeAgo(ts) + '</div>' +
+      '</div>';
+
     container.appendChild(div);
   });
 
-  container.scrollTop = container.scrollHeight;
+  if (atBottom) container.scrollTop = container.scrollHeight;
   renderReplyComposer();
+  renderEditBar();
   updateOnlineCount();
 }
 
-document.getElementById('chat-input').addEventListener('keydown', function(e) {
-  if (e.key === 'Enter') sendMessage();
-});
+// ─── Reaction picker ──────────────────────────
+function toggleReactPicker(msgId, btn) {
+  // Close any existing picker
+  const existing = document.getElementById('react-picker-popup');
+  if (existing) {
+    existing.remove();
+    if (chatReactionMenu === msgId) { chatReactionMenu = null; return; }
+  }
+  chatReactionMenu = msgId;
 
+  const popup = document.createElement('div');
+  popup.id = 'react-picker-popup';
+  popup.className = 'react-picker-popup';
+  CHAT_REACTIONS.forEach(function(emoji) {
+    const b = document.createElement('button');
+    b.textContent = emoji;
+    b.onclick = function() { toggleChatReaction(msgId, emoji); popup.remove(); chatReactionMenu = null; };
+    popup.appendChild(b);
+  });
+
+  // Position near button
+  btn.closest('.msg-actions').appendChild(popup);
+
+  // Close on outside click
+  setTimeout(function() {
+    document.addEventListener('click', function handler(e) {
+      if (!popup.contains(e.target) && e.target !== btn) {
+        popup.remove();
+        chatReactionMenu = null;
+        document.removeEventListener('click', handler);
+      }
+    });
+  }, 10);
+}
+
+// ─── Reaction toggle ──────────────────────────
 async function toggleChatReaction(messageId, emoji) {
   const user = currentUser();
   if (!user) return;
 
-  const ref = db.collection('chat').doc(messageId);
+  const ref  = db.collection('chat').doc(messageId);
   const snap = await ref.get();
   if (!snap.exists) return;
 
   const reactions = snap.data().reactions || {};
-  const users = Array.isArray(reactions[emoji]) ? reactions[emoji] : [];
-  const idx = users.indexOf(user);
+  const users     = Array.isArray(reactions[emoji]) ? reactions[emoji] : [];
+  const idx       = users.indexOf(user);
 
-  if (idx === -1) users.push(user);
-  else users.splice(idx, 1);
-
-  if (users.length) reactions[emoji] = users;
-  else delete reactions[emoji];
-
+  if (idx === -1) users.push(user); else users.splice(idx, 1);
+  if (users.length) reactions[emoji] = users; else delete reactions[emoji];
   await ref.update({ reactions });
 }
 
+// ─── Reply ────────────────────────────────────
 function setReplyTarget(messageId) {
-  const user = currentUser();
-  if (!user) return;
-
+  if (!currentUser()) return;
   const msg = chatMessageLookup[messageId];
   if (!msg) return;
-
-  replyTarget = {
-    id: messageId,
-    user: msg.user || 'unknown',
-    text: (msg.text || '').slice(0, 140),
-  };
+  replyTarget = { id: messageId, user: msg.user || 'unknown', text: (msg.text || '').slice(0, 140) };
+  editTarget  = null;
   renderReplyComposer();
+  renderEditBar();
+  document.getElementById('chat-input').focus();
 }
 
 function clearReplyTarget() {
@@ -342,39 +482,114 @@ function clearReplyTarget() {
 }
 
 function renderReplyComposer() {
+  let bar = document.getElementById('chat-reply-bar');
   const row = document.querySelector('.chat-input-row');
   if (!row) return;
-
-  let bar = document.getElementById('chat-reply-bar');
   if (!bar) {
     bar = document.createElement('div');
     bar.id = 'chat-reply-bar';
     bar.className = 'chat-reply-bar';
     row.parentNode.insertBefore(bar, row);
   }
-
-  if (!replyTarget || !currentUser()) {
-    bar.style.display = 'none';
-    bar.innerHTML = '';
-    return;
-  }
-
+  if (!replyTarget || !currentUser()) { bar.style.display = 'none'; bar.innerHTML = ''; return; }
   bar.style.display = 'flex';
   bar.innerHTML =
     '<div class="reply-preview">' +
-      '<span class="label">replying to ' + escapeHtml(replyTarget.user) + '</span>' +
+      '<span class="label">↩ replying to ' + escapeHtml(replyTarget.user) + '</span>' +
       '<span class="text">' + escapeHtml(replyTarget.text) + '</span>' +
     '</div>' +
-    '<button class="chat-reply-cancel" onclick="clearReplyTarget()" aria-label="Cancel reply">cancel</button>';
+    '<button class="chat-reply-cancel" onclick="clearReplyTarget()">✕</button>';
 }
+
+// ─── Edit ─────────────────────────────────────
+function startEdit(messageId) {
+  const msg = chatMessageLookup[messageId];
+  if (!msg || msg.user !== currentUser()) return;
+  editTarget  = { id: messageId, originalText: msg.text };
+  replyTarget = null;
+  const input = document.getElementById('chat-input');
+  input.value = msg.text;
+  input.focus();
+  renderEditBar();
+  renderReplyComposer();
+}
+
+function cancelEdit() {
+  editTarget = null;
+  document.getElementById('chat-input').value = '';
+  renderEditBar();
+}
+
+function renderEditBar() {
+  let bar = document.getElementById('chat-edit-bar');
+  const row = document.querySelector('.chat-input-row');
+  if (!row) return;
+  if (!bar) {
+    bar = document.createElement('div');
+    bar.id = 'chat-edit-bar';
+    bar.className = 'chat-reply-bar';
+    row.parentNode.insertBefore(bar, document.getElementById('chat-reply-bar') || row);
+  }
+  if (!editTarget) { bar.style.display = 'none'; bar.innerHTML = ''; return; }
+  bar.style.display = 'flex';
+  bar.innerHTML =
+    '<div class="reply-preview">' +
+      '<span class="label" style="color:#fbbf24">✏ editing message</span>' +
+      '<span class="text">' + escapeHtml(editTarget.originalText) + '</span>' +
+    '</div>' +
+    '<button class="chat-reply-cancel" onclick="cancelEdit()">✕</button>';
+}
+
+// ─── Delete chat message (own or admin) ───────
+async function deleteChatMsg(messageId) {
+  const user = currentUser();
+  if (!user) return;
+  const msg = chatMessageLookup[messageId];
+  if (!msg) return;
+  if (msg.user !== user && !isAdmin()) return;
+  if (!confirm('Delete this message?')) return;
+  await db.collection('chat').doc(messageId).delete();
+}
+
+// ─── Chat input listeners ─────────────────────
+document.getElementById('chat-input').addEventListener('keydown', function(e) {
+  if (e.key === 'Enter') sendMessage();
+  if (e.key === 'Escape') { cancelEdit(); clearReplyTarget(); }
+});
+
+// Paste image into chat
+document.getElementById('chat-input').addEventListener('paste', function(e) {
+  const user = currentUser();
+  if (!user) return;
+  const items = e.clipboardData && e.clipboardData.items;
+  if (!items) return;
+  for (let i = 0; i < items.length; i++) {
+    if (items[i].type.startsWith('image/')) {
+      e.preventDefault();
+      sendChatImage(items[i].getAsFile());
+      return;
+    }
+  }
+});
+
+// File input for chat image upload
+(function() {
+  const fileInput = document.getElementById('chat-file-input');
+  if (fileInput) {
+    fileInput.addEventListener('change', function(e) {
+      const file = e.target.files[0];
+      if (file) sendChatImage(file);
+      e.target.value = '';
+    });
+  }
+})();
 
 // ─── Online count (shared presence) ───────────
 function updateOnlineCount() {
   const user = currentUser();
   if (!user) return;
-
   db.collection('presence').doc(user.toLowerCase()).set({
-    display: user,
+    display:  user,
     lastSeen: firebase.firestore.FieldValue.serverTimestamp(),
   }, { merge: true }).catch(function() {});
 }
@@ -382,20 +597,17 @@ function updateOnlineCount() {
 function renderOnlineCount(snapshot) {
   const cutoff = Date.now() - 2 * 60 * 1000;
   let online = 0;
-
   snapshot.docs.forEach(function(doc) {
     const raw = doc.data().lastSeen;
-    const ts = raw && raw.toDate ? raw.toDate().getTime() : raw;
+    const ts  = raw && raw.toDate ? raw.toDate().getTime() : raw;
     if (ts && ts > cutoff) online += 1;
   });
-
   const badge = document.getElementById('online-count');
   if (badge) badge.textContent = online + ' online';
 }
 
 function startPresenceListener() {
   if (presenceUnsubscribe) return;
-
   presenceUnsubscribe = db.collection('presence').onSnapshot(
     function(snapshot) { renderOnlineCount(snapshot); },
     function() {
@@ -412,21 +624,25 @@ function updateChatAccessState() {
   const user    = currentUser();
   const input   = document.getElementById('chat-input');
   const sendBtn = document.getElementById('chat-send-btn');
+  const imgBtn  = document.getElementById('chat-img-btn');
   const note    = document.getElementById('chat-access-note');
 
   if (user) {
     input.disabled    = false;
     sendBtn.disabled  = false;
-    input.placeholder = 'say something...';
+    if (imgBtn)  imgBtn.disabled  = false;
+    input.placeholder = 'say something... (paste image or ctrl+v)';
     note.style.display = 'none';
   } else {
     input.disabled    = true;
     sendBtn.disabled  = true;
+    if (imgBtn)  imgBtn.disabled  = true;
     input.placeholder = 'log in to send a message';
     note.style.display = 'block';
   }
 
   renderReplyComposer();
+  renderEditBar();
 }
 
 function updateAuthUI() {
@@ -438,7 +654,7 @@ function updateAuthUI() {
   if (user) {
     guest.style.display    = 'none';
     authUser.style.display = 'flex';
-    userLabel.textContent  = user;
+    userLabel.textContent  = user + (isAdmin() ? ' 👑' : '');
   } else {
     guest.style.display    = 'block';
     authUser.style.display = 'none';
@@ -448,6 +664,33 @@ function updateAuthUI() {
   updateChatAccessState();
   if (typeof updatePicreaxUploadVisibility === 'function') updatePicreaxUploadVisibility();
   if (user) updateOnlineCount();
+}
+
+// ─── Lightbox (shared by chat + PicReax) ──────
+function openLightbox(src) {
+  let box = document.getElementById('lightbox');
+  if (!box) {
+    box = document.createElement('div');
+    box.id = 'lightbox';
+    box.className = 'lightbox';
+    box.innerHTML = '<div class="lightbox-backdrop"></div><img class="lightbox-img" />';
+    box.querySelector('.lightbox-backdrop').onclick = closeLightbox;
+    box.querySelector('.lightbox-img').onclick = closeLightbox;
+    document.body.appendChild(box);
+  }
+  box.querySelector('.lightbox-img').src = src;
+  box.classList.add('open');
+  document.addEventListener('keydown', lightboxKeyHandler);
+}
+
+function closeLightbox() {
+  const box = document.getElementById('lightbox');
+  if (box) box.classList.remove('open');
+  document.removeEventListener('keydown', lightboxKeyHandler);
+}
+
+function lightboxKeyHandler(e) {
+  if (e.key === 'Escape') closeLightbox();
 }
 
 // ─── Utilities ───────────────────────────────

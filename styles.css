@@ -332,30 +332,145 @@ html, body {
   padding: 8px 16px 0;
 }
 
+/* ── Chat message layout ── */
 .chat-msg {
   display: flex;
-  flex-direction: column;
-  max-width: 80%;
+  align-items: flex-end;
+  gap: 8px;
+  max-width: 82%;
 }
 
-.chat-msg.mine { align-self: flex-end; align-items: flex-end; }
-.chat-msg.theirs { align-self: flex-start; }
+.chat-msg.mine  { align-self: flex-end;  flex-direction: row-reverse; }
+.chat-msg.theirs { align-self: flex-start; flex-direction: row; }
 
-.chat-msg .bubble {
+/* Avatar emoji pill */
+.chat-avatar {
+  width: 32px; height: 32px;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 16px;
+  flex-shrink: 0;
+  user-select: none;
+}
+
+.msg-body {
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  min-width: 0;
+}
+
+.chat-msg.mine  .msg-body { align-items: flex-end; }
+.chat-msg.theirs .msg-body { align-items: flex-start; }
+
+/* Action buttons (hover reveal) */
+.msg-actions {
+  display: none;
+  gap: 4px;
+  margin-bottom: 4px;
+  position: relative;
+}
+
+.chat-msg:hover .msg-actions { display: flex; }
+
+.msg-action {
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: 99px;
+  padding: 2px 7px;
+  font-size: 12px;
+  cursor: pointer;
+  color: var(--text-muted);
+  font-family: inherit;
+  line-height: 1.4;
+}
+
+.msg-action:hover { border-color: var(--accent); color: var(--text); }
+.msg-action.danger:hover { border-color: #f87171; color: #f87171; }
+
+/* Bubble */
+.bubble {
   padding: 8px 14px;
   border-radius: var(--radius);
+  border: 1px solid transparent;
   font-size: 14px;
   line-height: 1.5;
+  word-break: break-word;
 }
 
-.chat-msg.mine .bubble { background: var(--accent2); color: #fff; border-bottom-right-radius: 4px; }
+.chat-msg.mine  .bubble { background: var(--accent2); color: #fff; border-bottom-right-radius: 4px; }
 .chat-msg.theirs .bubble { background: var(--bg3); border-bottom-left-radius: 4px; }
+
+.edited-tag { font-size: 10px; opacity: 0.6; }
+
+/* Image inside bubble */
+.chat-bubble-img {
+  max-width: 260px;
+  max-height: 260px;
+  border-radius: var(--radius-sm);
+  display: block;
+  cursor: zoom-in;
+  object-fit: contain;
+}
+
+/* Reacted pips row */
+.chat-reacted-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 4px;
+}
+
+.chat-reacted-pip {
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: 99px;
+  padding: 1px 8px;
+  font-size: 13px;
+  cursor: pointer;
+  font-family: inherit;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  color: var(--text);
+}
+
+.chat-reacted-pip span { font-size: 11px; color: var(--text-muted); }
+.chat-reacted-pip.mine,
+.chat-reacted-pip:hover { background: rgba(167,139,250,0.15); border-color: var(--accent); }
+
+/* Reaction picker popup */
+.react-picker-popup {
+  position: absolute;
+  bottom: calc(100% + 4px);
+  left: 0;
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 6px;
+  display: flex;
+  gap: 4px;
+  z-index: 500;
+  box-shadow: var(--shadow);
+}
+
+.react-picker-popup button {
+  background: none;
+  border: none;
+  font-size: 18px;
+  cursor: pointer;
+  border-radius: 6px;
+  padding: 3px 5px;
+  transition: background 0.1s;
+}
+
+.react-picker-popup button:hover { background: rgba(255,255,255,0.1); }
 
 .chat-msg .msg-meta {
   font-size: 11px;
   color: var(--text-muted);
   margin-top: 3px;
-  padding: 0 4px;
+  padding: 0 2px;
 }
 
 .chat-reply-snippet {
@@ -379,56 +494,9 @@ html, body {
   padding: 0 2px;
 }
 
-.chat-action-btn {
-  background: transparent;
-  border: 1px solid var(--border);
-  border-radius: 99px;
-  padding: 2px 8px;
-  font-size: 12px;
-  color: var(--text-muted);
-  cursor: pointer;
-  font-family: inherit;
-}
+/* (chat-action-btn superseded by .msg-action) */
 
-.chat-action-btn:hover {
-  border-color: var(--accent);
-  color: var(--text);
-}
-
-.chat-action-btn:disabled {
-  opacity: 0.55;
-  cursor: not-allowed;
-}
-
-.chat-reaction-btn {
-  background: var(--bg3);
-  border: 1px solid var(--border);
-  border-radius: 99px;
-  padding: 2px 8px;
-  font-size: 12px;
-  color: var(--text);
-  cursor: pointer;
-  font-family: inherit;
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-}
-
-.chat-reaction-btn .count {
-  font-size: 11px;
-  color: var(--text-muted);
-}
-
-.chat-reaction-btn:hover,
-.chat-reaction-btn.reacted {
-  background: rgba(167,139,250,0.15);
-  border-color: var(--accent);
-}
-
-.chat-reaction-btn:disabled {
-  opacity: 0.55;
-  cursor: not-allowed;
-}
+/* (legacy reaction-btn styles removed — replaced by chat-reacted-pip + react-picker-popup) */
 
 .chat-reply-bar {
   display: none;
@@ -479,8 +547,9 @@ html, body {
 
 .chat-input-row {
   display: flex;
+  align-items: center;
   gap: 8px;
-  padding: 12px 16px;
+  padding: 10px 16px;
   border-top: 1px solid var(--border);
 }
 
@@ -498,6 +567,21 @@ html, body {
 }
 
 .chat-input-row input:focus { border-color: var(--accent); }
+
+.chat-img-btn {
+  width: 36px; height: 36px;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-size: 17px;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: border-color 0.15s;
+  user-select: none;
+}
+
+.chat-img-btn:hover { border-color: var(--accent); }
 
 /* =============================================
    BUTTONS
@@ -836,4 +920,54 @@ html, body {
   .app-frame {
     height: calc(100vh - var(--topbar-h) - 145px);
   }
+}
+
+/* =============================================
+   LIGHTBOX
+============================================= */
+.lightbox {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 9000;
+  align-items: center;
+  justify-content: center;
+}
+
+.lightbox.open { display: flex; }
+
+.lightbox-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0,0,0,0.85);
+  cursor: zoom-out;
+}
+
+.lightbox-img {
+  position: relative;
+  max-width: 92vw;
+  max-height: 90vh;
+  border-radius: var(--radius);
+  object-fit: contain;
+  box-shadow: var(--shadow);
+  cursor: zoom-out;
+}
+
+/* =============================================
+   ADMIN DELETE BUTTON (PicReax)
+============================================= */
+.btn-admin-delete {
+  background: rgba(248,113,113,0.1);
+  border: 1px solid #f87171;
+  border-radius: var(--radius-sm);
+  color: #f87171;
+  font-size: 12px;
+  padding: 3px 10px;
+  cursor: pointer;
+  font-family: inherit;
+  margin-left: auto;
+}
+
+.btn-admin-delete:hover {
+  background: rgba(248,113,113,0.25);
 }

@@ -127,17 +127,22 @@ function buildPostEl(post) {
 
   const timeMs = post.time?.toDate ? post.time.toDate().getTime() : post.time;
   const avatar = post.user ? post.user[0].toUpperCase() : '?';
+  const adminDelete = (typeof isAdmin === 'function' && isAdmin())
+    ? `<button class="btn-admin-delete" onclick="adminDeletePost('${post.id}')">🗑 delete post</button>`
+    : '';
 
   article.innerHTML = `
     <div class="post-header">
       <div class="post-avatar">${avatar}</div>
-      <div>
+      <div style="flex:1">
         <div class="post-username">${escapeHtml(post.user || 'unknown')}</div>
         <div class="post-time">${timeAgo(timeMs)}</div>
       </div>
+      ${adminDelete}
     </div>
     <div class="post-img-wrap">
-      <img class="post-img" src="${post.imgUrl}" alt="post by ${escapeHtml(post.user || 'unknown')}" loading="lazy" />
+      <img class="post-img" src="${post.imgUrl}" alt="post by ${escapeHtml(post.user || 'unknown')}" loading="lazy"
+        onclick="openLightbox('${post.imgUrl}')" style="cursor:zoom-in" />
     </div>
     <div class="post-actions">${reactionBtns}</div>
     <div class="post-comments">
@@ -183,6 +188,12 @@ async function addComment(postId, input) {
   });
 
   input.value = '';
+}
+
+async function adminDeletePost(postId) {
+  if (typeof isAdmin !== 'function' || !isAdmin()) return;
+  if (!confirm('Delete this post permanently?')) return;
+  await db.collection('picreax').doc(postId).delete();
 }
 
 (function initPicreax() {
