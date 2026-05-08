@@ -174,6 +174,11 @@ async function loginUser() {
 }
 
 function logoutUser() {
+  const user = currentUser();
+  if (user && typeof db !== 'undefined') {
+    db.collection('presence').doc(user.toLowerCase()).delete().catch(function() {});
+  }
+
   clearSession();
   document.getElementById('login-username').value = '';
   document.getElementById('login-password').value = '';
@@ -188,6 +193,7 @@ function showMsg(el, text, ok = false) {
 // ─── Chat (Firestore real-time) ──────────────
 let chatUnsubscribe = null;
 const CHAT_REACTIONS = ['❤️', '😂', '😮', '🔥'];
+let presenceUnsubscribe = null;
 
 function showChatError(msg) {
   const container = document.getElementById('chat-messages');
@@ -288,17 +294,41 @@ async function toggleChatReaction(messageId, emoji) {
   await ref.update({ reactions });
 }
 
-// ─── Online count ─────────────────────────────
-const PRESENCE_KEY = 'cozy_presence';
-
+// ─── Online count (shared presence) ───────────
 function updateOnlineCount() {
-  const presences = JSON.parse(localStorage.getItem(PRESENCE_KEY) || '{}');
   const user = currentUser();
-  if (user) presences[user] = Date.now();
+  if (!user) return;
+
+  db.collection('presence').doc(user.toLowerCase()).set({
+    display: user,
+    lastSeen: firebase.firestore.FieldValue.serverTimestamp(),
+  }, { merge: true }).catch(function() {});
+}
+
+function renderOnlineCount(snapshot) {
   const cutoff = Date.now() - 2 * 60 * 1000;
-  const online = Object.values(presences).filter(function(t) { return t > cutoff; }).length;
-  document.getElementById('online-count').textContent = online + ' online';
-  localStorage.setItem(PRESENCE_KEY, JSON.stringify(presences));
+  let online = 0;
+
+  snapshot.docs.forEach(function(doc) {
+    const raw = doc.data().lastSeen;
+    const ts = raw && raw.toDate ? raw.toDate().getTime() : raw;
+    if (ts && ts > cutoff) online += 1;
+  });
+
+  const badge = document.getElementById('online-count');
+  if (badge) badge.textContent = online + ' online';
+}
+
+function startPresenceListener() {
+  if (presenceUnsubscribe) return;
+
+  presenceUnsubscribe = db.collection('presence').onSnapshot(
+    function(snapshot) { renderOnlineCount(snapshot); },
+    function() {
+      const badge = document.getElementById('online-count');
+      if (badge) badge.textContent = '-- online';
+    }
+  );
 }
 
 setInterval(function() { if (currentUser()) updateOnlineCount(); }, 30000);
@@ -341,7 +371,7 @@ function updateAuthUI() {
 
   updateChatAccessState();
   if (typeof updatePicreaxUploadVisibility === 'function') updatePicreaxUploadVisibility();
-  updateOnlineCount();
+  if (user) updateOnlineCount();
 }
 
 // ─── Utilities ───────────────────────────────
@@ -370,4 +400,5 @@ function timeAgo(ts) {
   }
   updateAuthUI();
   startChatListener();
+  startPresenceListener();
 })();
