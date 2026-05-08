@@ -337,11 +337,12 @@ html, body {
   display: flex;
   align-items: flex-end;
   gap: 8px;
-  max-width: 82%;
+  width: 100%;
+  max-width: 100%;
 }
 
-.chat-msg.mine  { align-self: flex-end;  flex-direction: row-reverse; }
-.chat-msg.theirs { align-self: flex-start; flex-direction: row; }
+.chat-msg.mine  { align-self: stretch; justify-content: flex-end; flex-direction: row; }
+.chat-msg.theirs { align-self: stretch; justify-content: flex-start; flex-direction: row; }
 
 /* Avatar emoji pill */
 .chat-avatar {
@@ -358,22 +359,39 @@ html, body {
   flex-direction: column;
   position: relative;
   min-width: 0;
+  max-width: min(82%, 700px);
 }
 
 .chat-msg.mine  .msg-body { align-items: flex-end; }
 .chat-msg.theirs .msg-body { align-items: flex-start; }
 
-/* Side action buttons (shown on hover, beside the bubble) */
+/* Side action buttons (horizontal, stable width, shown on row hover) */
 .msg-side-actions {
-  display: none;
-  flex-direction: column;
-  gap: 3px;
-  align-self: center;
+  display: flex;
+  flex-direction: row;
+  gap: 4px;
+  align-self: flex-end;
   flex-shrink: 0;
   position: relative;
+  min-width: 100px;
+  justify-content: flex-start;
+  visibility: hidden;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.12s;
 }
 
-.chat-msg:hover .msg-side-actions { display: flex; }
+.chat-msg.mine .msg-side-actions {
+  order: -1;
+  justify-content: flex-end;
+}
+
+.chat-msg:hover .msg-side-actions,
+.msg-side-actions:focus-within {
+  visibility: visible;
+  opacity: 1;
+  pointer-events: auto;
+}
 
 .msg-side-btn {
   background: var(--bg3);
@@ -391,6 +409,46 @@ html, body {
 
 .msg-side-btn:hover { border-color: var(--accent); color: var(--text); }
 .msg-side-btn.danger:hover { border-color: #f87171; color: #f87171; }
+
+.msg-more-wrap {
+  position: relative;
+  display: flex;
+}
+
+.msg-more-menu {
+  display: none;
+  position: absolute;
+  bottom: calc(100% + 6px);
+  right: 0;
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  min-width: 118px;
+  overflow: hidden;
+  box-shadow: var(--shadow);
+  z-index: 550;
+}
+
+.msg-more-menu.open { display: flex; flex-direction: column; }
+
+.msg-more-item {
+  background: transparent;
+  border: none;
+  color: var(--text);
+  text-align: left;
+  font-size: 12px;
+  font-family: inherit;
+  padding: 8px 10px;
+  cursor: pointer;
+}
+
+.msg-more-item:hover {
+  background: rgba(255,255,255,0.08);
+}
+
+.msg-more-item.danger {
+  color: #f87171;
+}
 
 /* Bubble */
 .bubble {

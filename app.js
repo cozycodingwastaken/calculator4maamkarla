@@ -228,6 +228,7 @@ let replyTarget       = null;
 let editTarget        = null;   // { id, originalText }
 let chatMessageLookup = {};
 let chatReactionMenu  = null;   // currently open popup id
+let chatMoreMenu      = null;   // currently open action menu id
 
 const CHAT_REACTIONS = ['❤️', '😂', '😮', '😢', '🔥', '👍'];
 
@@ -372,13 +373,20 @@ function renderMessages(msgs) {
           e + ' <span>' + users.length + '</span></button>';
       }).join('');
 
-    // Side action buttons (react + reply always; edit + delete for own/admin)
-    const replyBtn  = user ? '<button class="msg-side-btn" title="reply" onclick="setReplyTarget(\'' + m.id + '\')">↩</button>' : '';
-    const editBtn   = isMine ? '<button class="msg-side-btn" title="edit" onclick="startEdit(\'' + m.id + '\')">✏</button>' : '';
-    const deleteBtn = (isMine || admin) ? '<button class="msg-side-btn danger" title="delete" onclick="deleteChatMsg(\'' + m.id + '\')">🗑</button>' : '';
-    const reactBtn  = user ? '<button class="msg-side-btn" title="react" onclick="toggleReactPicker(\'' + m.id + '\',this)">😊</button>' : '';
+    // Side action buttons (Messenger-style): react + reply; edit/delete inside triple-dot menu
+    const replyBtn = user ? '<button class="msg-side-btn" title="reply" onclick="setReplyTarget(\'' + m.id + '\')">↩</button>' : '';
+    const reactBtn = user ? '<button class="msg-side-btn" title="react" onclick="toggleReactPicker(\'' + m.id + '\',this)">😊</button>' : '';
+    const moreItems =
+      (isMine ? '<button class="msg-more-item" onclick="closeMsgMenus();startEdit(\'' + m.id + '\')">✏ Edit</button>' : '') +
+      ((isMine || admin) ? '<button class="msg-more-item danger" onclick="closeMsgMenus();deleteChatMsg(\'' + m.id + '\')">🗑 Delete</button>' : '');
+    const moreBtn = moreItems
+      ? '<div class="msg-more-wrap">' +
+          '<button class="msg-side-btn" title="more" onclick="toggleMsgMenu(\'' + m.id + '\',this)">⋯</button>' +
+          '<div class="msg-more-menu" id="msg-more-menu-' + m.id + '">' + moreItems + '</div>' +
+        '</div>'
+      : '';
 
-    const sideActionsHtml = '<div class="msg-side-actions">' + reactBtn + replyBtn + editBtn + deleteBtn + '</div>';
+    const sideActionsHtml = '<div class="msg-side-actions">' + reactBtn + replyBtn + moreBtn + '</div>';
 
     const div = document.createElement('div');
     div.className = 'chat-msg ' + (isMine ? 'mine' : 'theirs');
@@ -412,6 +420,8 @@ function renderMessages(msgs) {
 
 // ─── Reaction picker ──────────────────────────
 function toggleReactPicker(msgId, btn) {
+  closeMsgMenus();
+
   // Close any existing picker
   const existing = document.getElementById('react-picker-popup');
   if (existing) {
@@ -439,6 +449,40 @@ function toggleReactPicker(msgId, btn) {
       if (!popup.contains(e.target) && e.target !== btn) {
         popup.remove();
         chatReactionMenu = null;
+        document.removeEventListener('click', handler);
+      }
+    });
+  }, 10);
+}
+
+function closeMsgMenus() {
+  const openMenus = document.querySelectorAll('.msg-more-menu.open');
+  openMenus.forEach(function(menu) { menu.classList.remove('open'); });
+  chatMoreMenu = null;
+}
+
+function toggleMsgMenu(msgId, btn) {
+  const menu = btn.nextElementSibling;
+  if (!menu) return;
+
+  const willOpen = !menu.classList.contains('open');
+  closeMsgMenus();
+
+  if (!willOpen) return;
+
+  const picker = document.getElementById('react-picker-popup');
+  if (picker) {
+    picker.remove();
+    chatReactionMenu = null;
+  }
+
+  menu.classList.add('open');
+  chatMoreMenu = msgId;
+
+  setTimeout(function() {
+    document.addEventListener('click', function handler(e) {
+      if (!menu.contains(e.target) && e.target !== btn) {
+        closeMsgMenus();
         document.removeEventListener('click', handler);
       }
     });
