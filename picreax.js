@@ -7,6 +7,22 @@
 const REACTIONS = ['❤️', '😂', '😮', '😢', '🔥'];
 const CLOUDINARY_CLOUD = 'dokmgafq4';
 const CLOUDINARY_PRESET = 'ywthyinx';
+let lastPicreaxPosts = [];
+
+function renderPicreaxFeed(posts) {
+  const feed = document.getElementById('picreax-feed');
+  if (!feed) return;
+
+  if (!posts.length) {
+    feed.innerHTML = '<p style="color:var(--text-muted);font-size:14px;">no posts yet. be the first!</p>';
+    return;
+  }
+
+  feed.innerHTML = '';
+  posts.forEach(post => {
+    feed.appendChild(buildPostEl(post));
+  });
+}
 
 function updatePicreaxUploadVisibility() {
   const user = currentUser();
@@ -22,6 +38,9 @@ function updatePicreaxUploadVisibility() {
     uploadArea.style.display = 'none';
     loginNote.style.display = 'block';
   }
+
+  // Re-render so auth-dependent controls (comment box, admin delete) update immediately.
+  renderPicreaxFeed(lastPicreaxPosts);
 }
 
 async function handlePicUpload(event) {
@@ -82,18 +101,8 @@ function startPicreaxListener() {
   db.collection('picreax')
     .orderBy('time', 'desc')
     .onSnapshot(snapshot => {
-      const feed = document.getElementById('picreax-feed');
-      if (!feed) return;
-
-      if (snapshot.empty) {
-        feed.innerHTML = '<p style="color:var(--text-muted);font-size:14px;">no posts yet. be the first!</p>';
-        return;
-      }
-
-      feed.innerHTML = '';
-      snapshot.docs.forEach(doc => {
-        feed.appendChild(buildPostEl({ id: doc.id, ...doc.data() }));
-      });
+      lastPicreaxPosts = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      renderPicreaxFeed(lastPicreaxPosts);
     });
 }
 
